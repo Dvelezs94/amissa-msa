@@ -1,5 +1,25 @@
 export type WorkOrderKind = "routine" | "on_demand";
 
+/** Board filter on `/tareas`. `all` shows both kinds. */
+export type WorkOrderKindFilter = "all" | WorkOrderKind;
+
+export const WORK_ORDER_KIND_FILTERS: {
+  value: WorkOrderKindFilter;
+  label: string;
+}[] = [
+  { value: "all", label: "Todas" },
+  { value: "on_demand", label: "Órdenes de trabajo" },
+  { value: "routine", label: "Rutinas" },
+];
+
+export function workOrderMatchesKindFilter(
+  kind: unknown,
+  filter: WorkOrderKindFilter
+): boolean {
+  if (filter === "all") return true;
+  return parseWorkOrderKind(kind) === filter;
+}
+
 export function parseWorkOrderKind(raw: unknown): WorkOrderKind {
   if (raw === "routine") return "routine";
   return "on_demand";

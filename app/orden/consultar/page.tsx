@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { APP_TIME_ZONE } from "@/lib/timezone";
+import { parsePublicOrderLookup } from "@/lib/public-order-lookup";
 
 type PublicComment = {
   id: string;
@@ -11,6 +12,15 @@ type PublicComment = {
   authorName: string;
   text: string;
   inlineFiles: { filename: string; url: string }[];
+};
+
+type EmailMatch = {
+  folio: number;
+  title: string;
+  status: string;
+  createdAt: string | null;
+  assetName: string | null;
+  assetCode: string | null;
 };
 
 type FolioLookupResult = {
@@ -119,37 +129,84 @@ function ConsultarOrdenForm() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [lookupResult, setLookupResult] = useState<FolioLookupResult | null>(null);
+  const [emailMatches, setEmailMatches] = useState<EmailMatch[] | null>(null);
 
   useEffect(() => {
-    const q = searchParams.get("folio")?.trim() ?? "";
+    const folio = searchParams.get("folio")?.trim() ?? "";
+    const email = searchParams.get("email")?.trim() ?? "";
+    const q = folio || email;
     if (q) {
       setFolioLookup(q);
       setLookupResult(null);
+      setEmailMatches(null);
       setLookupError(null);
     }
   }, [searchParams]);
+
+  async function lookupFolio(folio: string) {
+    const params = new URLSearchParams({ folio });
+    const res = await fetch(`/api/solicitud?${params.toString()}`);
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!res.ok) {
+      setLookupError(
+        typeof data.error === "string" ? data.error : "No se pudo consultar el folio."
+      );
+      return;
+    }
+    setLookupResult(normalizeLookupPayload(data));
+  }
+
+  async function lookupEmail(email: string) {
+    const params = new URLSearchParams({ email });
+    const res = await fetch(`/api/solicitud?${params.toString()}`);
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!res.ok) {
+      setLookupError(
+        typeof data.error === "string" ? data.error : "No se pudo consultar el email."
+      );
+      return;
+    }
+    const orders = Array.isArray(data.orders) ? (data.orders as EmailMatch[]) : [];
+    if (orders.length === 0) {
+      setLookupError("No se encontró una orden con ese email.");
+      return;
+    }
+    setEmailMatches(orders);
+    if (orders.length === 1 && orders[0]?.folio != null) {
+      await lookupFolio(String(orders[0].folio));
+    }
+  }
 
   async function onLookupFolio(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLookupError(null);
     setLookupResult(null);
-    const trimmed = folioLookup.trim();
-    if (!trimmed) {
-      setLookupError("Escribe el folio de la orden.");
+    setEmailMatches(null);
+    const parsed = parsePublicOrderLookup(folioLookup);
+    if (!parsed.ok) {
+      setLookupError(parsed.error);
       return;
     }
     setLookupLoading(true);
     try {
-      const params = new URLSearchParams({ folio: trimmed });
-      const res = await fetch(`/api/solicitud?${params.toString()}`);
-      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      if (!res.ok) {
-        setLookupError(
-          typeof data.error === "string" ? data.error : "No se pudo consultar el folio."
-        );
-        return;
+      if (parsed.value.kind === "email") {
+        await lookupEmail(parsed.value.email);
+      } else {
+        await lookupFolio(String(parsed.value.folio));
       }
-      setLookupResult(normalizeLookupPayload(data));
+    } catch {
+      setLookupError("No se pudo consultar la orden.");
+    } finally {
+      setLookupLoading(false);
+    }
+  }
+
+  async function openEmailMatch(folio: number) {
+    setLookupError(null);
+    setLookupResult(null);
+    setLookupLoading(true);
+    try {
+      await lookupFolio(String(folio));
     } catch {
       setLookupError("No se pudo consultar el folio.");
     } finally {
@@ -160,9 +217,10 @@ function ConsultarOrdenForm() {
   return (
     <div className="mx-auto max-w-lg space-y-5">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-zinc-900">Consultar orden por folio</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">Consultar orden</h1>
         <p className="text-sm text-zinc-600">
-          Consulta ordenes de mantenimiento por folio.
+          Busca por folio. Si no lo recuerdas, usa el email de contacto con el que
+          creaste la orden.
         </p>
       </header>
 
@@ -171,20 +229,19 @@ function ConsultarOrdenForm() {
         aria-labelledby="folio-lookup-heading"
       >
         <h2 id="folio-lookup-heading" className="sr-only">
-          Busqueda por folio
+          Búsqueda por folio o email
         </h2>
         <form onSubmit={onLookupFolio} className="space-y-3">
           <div>
             <label htmlFor="folioConsulta" className="mb-1 block text-sm font-medium text-zinc-700">
-              Folio
+              Folio o email
             </label>
             <input
               id="folioConsulta"
               name="folioConsulta"
               type="text"
-              inputMode="numeric"
               autoComplete="off"
-              placeholder="Ej: 2009"
+              placeholder="Ej. 2009 o ana@correo.com"
               value={folioLookup}
               onChange={(e) => setFolioLookup(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -201,6 +258,32 @@ function ConsultarOrdenForm() {
             {lookupLoading ? "Buscando..." : "Consultar"}
           </button>
         </form>
+        {emailMatches && emailMatches.length > 1 ? (
+          <ul className="space-y-2">
+            <li className="text-xs text-zinc-500">
+              Estas órdenes usan ese email. Elige una para ver el detalle.
+            </li>
+            {emailMatches.map((order) => (
+              <li key={order.folio}>
+                <button
+                  type="button"
+                  onClick={() => openEmailMatch(order.folio)}
+                  className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-left text-sm hover:border-primary-300 hover:bg-white"
+                >
+                  <span className="font-semibold text-zinc-900">Folio {order.folio}</span>
+                  <span className="mt-0.5 block text-zinc-800">{order.title}</span>
+                  <span className="mt-0.5 block text-xs text-zinc-500">
+                    {STATUS_LABEL[order.status] ?? order.status}
+                    {order.assetName
+                      ? ` · ${order.assetName}${order.assetCode ? ` (${order.assetCode})` : ""}`
+                      : ""}
+                    {order.createdAt ? ` · ${formatPublicDate(order.createdAt)}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {lookupResult ? (
           <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-800">
             <dl className="space-y-2">

@@ -13,6 +13,11 @@ El sistema SHALL mostrar tareas en un tablero estilo Kanban en `/tareas`.
 - **WHEN** navega a `/tareas`
 - **THEN** ve las tareas organizadas por columnas de estado
 
+#### Scenario: Filtrar órdenes de trabajo o rutinas
+- **GIVEN** el tablero de `/tareas` con órdenes de trabajo y rutinas
+- **WHEN** el usuario elige «Órdenes de trabajo» o «Rutinas»
+- **THEN** el tablero muestra solo ese tipo
+
 ### Requirement: Fecha de inicio
 Las tareas SHALL soportar una `start_date` opcional, distinta de `startedAt`.
 

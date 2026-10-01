@@ -103,6 +103,7 @@ async function getAsset(id: string) {
         hoursPerDay: assetHourMaintenancePlans.hoursPerDay,
         everyHours: assetHourMaintenancePlans.everyHours,
         startDate: assetHourMaintenancePlans.startDate,
+        workdays: assetHourMaintenancePlans.workdays,
         planCalendarId: assetHourMaintenancePlans.calendarId,
         planChecklistTemplateId: assetHourMaintenancePlans.checklistTemplateId,
         planColor: assetHourMaintenancePlans.color,
@@ -167,6 +168,7 @@ async function getAsset(id: string) {
         hoursPerDay: r.hoursPerDay,
         everyHours: r.everyHours,
         startDate: r.startDate,
+        workdays: r.workdays,
         calendarId: r.scheduleCalendarId ?? r.planCalendarId,
         calendarName: r.calendarName,
         checklistTemplateId:

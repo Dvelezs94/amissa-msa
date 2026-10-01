@@ -15,8 +15,10 @@ import {
   hourMaintenanceCreatedCalendarHref,
 } from "@/lib/hour-maintenance";
 import {
+  expandOccurrencesInRange,
   formatRecurrenceLabel,
   parseRecurrence,
+  toYmdLocal,
 } from "@/lib/maintenance-recurrence";
 
 describe("hourMaintenanceCreatedCalendarHref", () => {
@@ -78,6 +80,17 @@ describe("buildHourMaintenanceRecurrence", () => {
     expect(rule.interval).toBe(31);
     expect(rule.hourPlan).toEqual({ hoursPerDay: 8, everyHours: 250 });
   });
+
+  it("stores selected work days and still uses the operating-day interval", () => {
+    const rule = buildHourMaintenanceRecurrence({
+      hoursPerDay: 8,
+      everyHours: 250,
+      anchorDate: "2026-01-05",
+      workdays: [1, 2, 3, 4, 5],
+    });
+    expect(rule.interval).toBe(31);
+    expect(rule.hourPlan?.workdays).toEqual([1, 2, 3, 4, 5]);
+  });
 });
 
 describe("hourMaintenanceSchedulePayload", () => {
@@ -135,6 +148,21 @@ describe("parseHourMaintenancePlanFields", () => {
         startDate: "2026-08-18",
       }).ok
     ).toBe(false);
+    const withDays = parseHourMaintenancePlanFields({
+      hoursPerDay: 8,
+      everyHours: 250,
+      startDate: "2026-08-18",
+      workdays: [5, 1, 1],
+    });
+    expect(withDays.ok && withDays.value.workdays).toEqual([1, 5]);
+    expect(
+      parseHourMaintenancePlanFields({
+        hoursPerDay: 8,
+        everyHours: 250,
+        startDate: "2026-08-18",
+        workdays: [],
+      }).ok
+    ).toBe(false);
   });
 });
 
@@ -147,6 +175,15 @@ describe("formatHourMaintenancePreview", () => {
       "Cada 8 h de uso (8 h/día) · Cada 1 día en el calendario"
     );
     expect(formatHourMaintenancePreview(0, 250)).toBeNull();
+  });
+
+  it("counts only the selected work days", () => {
+    expect(formatHourMaintenancePreview(8, 250, [1, 2, 3, 4, 5])).toBe(
+      "Cada 250 h de uso (8 h/día) · Cada 31 días de trabajo (Lun, Mar, Mié, Jue, Vie)"
+    );
+    expect(formatHourMaintenancePreview(8, 250, [0, 1, 2, 3, 4, 5, 6])).toBe(
+      "Cada 250 h de uso (8 h/día) · Cada 31 días en el calendario"
+    );
   });
 });
 
@@ -164,6 +201,15 @@ describe("hourPlanTimingChanged", () => {
     expect(
       hourPlanTimingChanged(base, { ...base, startDate: "2026-09-01" })
     ).toBe(true);
+    expect(
+      hourPlanTimingChanged(base, { ...base, workdays: [1, 2, 3, 4, 5] })
+    ).toBe(true);
+    expect(
+      hourPlanTimingChanged(
+        { ...base, workdays: [1, 5, 3] },
+        { ...base, workdays: [3, 1, 5] }
+      )
+    ).toBe(false);
   });
 });
 
@@ -201,5 +247,79 @@ describe("formatRecurrenceLabel hourPlan", () => {
     expect(formatRecurrenceLabel(raw)).toBe(
       "Cada 250 h de uso (8 h/día) · Cada 31 días"
     );
+  });
+
+  it("names the work days when the machine does not run every day", () => {
+    const raw = JSON.stringify({
+      frequency: "daily",
+      interval: 31,
+      anchorDate: "2026-01-05",
+      hourPlan: { hoursPerDay: 8, everyHours: 250, workdays: [1, 2, 3, 4, 5] },
+    });
+    expect(formatRecurrenceLabel(raw)).toBe(
+      "Cada 250 h de uso (8 h/día, Lun, Mar, Mié, Jue, Vie) · Cada 31 días de trabajo"
+    );
+  });
+});
+
+describe("hour plan occurrences on work days", () => {
+  it("skips weekends when counting the operating-day interval", () => {
+    const rule = buildHourMaintenanceRecurrence({
+      hoursPerDay: 8,
+      everyHours: 16,
+      anchorDate: "2026-01-05",
+      workdays: [1, 2, 3, 4, 5],
+    });
+    expect(rule.interval).toBe(2);
+    const dates = expandOccurrencesInRange(
+      rule,
+      new Date(2026, 0, 5),
+      new Date(2026, 0, 13)
+    ).map(toYmdLocal);
+    expect(dates).toEqual([
+      "2026-01-05",
+      "2026-01-07",
+      "2026-01-09",
+      "2026-01-13",
+    ]);
+  });
+
+  it("keeps the start date and then steps only on work days", () => {
+    const rule = buildHourMaintenanceRecurrence({
+      hoursPerDay: 8,
+      everyHours: 16,
+      anchorDate: "2026-01-10",
+      workdays: [1, 2, 3, 4, 5],
+    });
+    const dates = expandOccurrencesInRange(
+      rule,
+      new Date(2026, 0, 10),
+      new Date(2026, 0, 19)
+    ).map(toYmdLocal);
+    expect(dates).toEqual([
+      "2026-01-10",
+      "2026-01-13",
+      "2026-01-15",
+      "2026-01-19",
+    ]);
+  });
+
+  it("places the 31st work day after a Monday start on the following Tuesday", () => {
+    const rule = buildHourMaintenanceRecurrence({
+      hoursPerDay: 8,
+      everyHours: 250,
+      anchorDate: "2026-01-05",
+      workdays: [1, 2, 3, 4, 5],
+    });
+    const dates = expandOccurrencesInRange(
+      rule,
+      new Date(2026, 0, 5),
+      new Date(2026, 3, 1)
+    ).map(toYmdLocal);
+    expect(dates.slice(0, 3)).toEqual([
+      "2026-01-05",
+      "2026-02-17",
+      "2026-04-01",
+    ]);
   });
 });

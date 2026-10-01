@@ -484,6 +484,11 @@ export const assetHourMaintenancePlans = pgTable(
     hoursPerDay: real("hours_per_day").notNull(),
     everyHours: real("every_hours").notNull(),
     startDate: text("start_date").notNull(),
+    /** 0=domingo … 6=sábado. All seven = hours accumulate every calendar day. */
+    workdays: jsonb("workdays")
+      .$type<number[]>()
+      .notNull()
+      .default(sql`'[0,1,2,3,4,5,6]'::jsonb`),
     calendarId: text("calendar_id").references(() => calendars.id, {
       onDelete: "set null",
     }),

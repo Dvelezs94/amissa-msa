@@ -34,18 +34,40 @@ export type MaintenanceRecurrenceRule = {
 export type MaintenanceHourPlan = {
   hoursPerDay: number;
   everyHours: number;
+  /**
+   * Weekdays the machine actually runs (0=domingo … 6=sábado).
+   * Omitted or all seven days: every calendar day counts.
+   */
+  workdays?: number[];
 };
+
+/** Unique weekdays 0–6. Empty or all seven → undefined (every calendar day). */
+export function parseHourPlanWorkdays(raw: unknown): number[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const days = Array.from(
+    new Set(
+      raw
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    )
+  ).sort((a, b) => a - b);
+  if (days.length === 0 || days.length >= 7) return undefined;
+  return days;
+}
 
 function parseHourPlan(raw: unknown): MaintenanceHourPlan | undefined {
   if (!raw || typeof raw !== "object") return undefined;
-  const o = raw as { hoursPerDay?: unknown; everyHours?: unknown };
+  const o = raw as { hoursPerDay?: unknown; everyHours?: unknown; workdays?: unknown };
   const hoursPerDay = Number(o.hoursPerDay);
   const everyHours = Number(o.everyHours);
   if (!Number.isFinite(hoursPerDay) || hoursPerDay <= 0 || hoursPerDay > 24) {
     return undefined;
   }
   if (!Number.isFinite(everyHours) || everyHours <= 0) return undefined;
-  return { hoursPerDay, everyHours };
+  const workdays = parseHourPlanWorkdays(o.workdays);
+  return workdays
+    ? { hoursPerDay, everyHours, workdays }
+    : { hoursPerDay, everyHours };
 }
 
 export function parseRecurrence(raw: string): MaintenanceRecurrenceRule | null {
@@ -228,6 +250,21 @@ export function expandOccurrencesInRange(
       pushInRange(anchor);
       break;
     case "daily": {
+      const workdays = parseHourPlanWorkdays(rule.hourPlan?.workdays);
+      if (workdays) {
+        let d = new Date(anchor);
+        let workdaysSince = 0;
+        while (d <= capEnd) {
+          if (d.getTime() === anchor.getTime()) {
+            pushInRange(d);
+          } else if (workdays.includes(d.getDay())) {
+            workdaysSince += 1;
+            if (workdaysSince % interval === 0) pushInRange(d);
+          }
+          d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+        }
+        break;
+      }
       let d = new Date(Math.max(anchor.getTime(), start.getTime()));
       while (d <= capEnd) {
         const daysSince = Math.round((d.getTime() - anchor.getTime()) / MS_DAY);
@@ -338,6 +375,15 @@ export function resolveNextMaintenanceDisplayDate(
 }
 
 const WEEKDAY_LABELS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const WORKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+/** Lun–Dom labels for the selected weekdays. */
+export function formatWorkdaysLabel(workdays: number[]): string {
+  const set = new Set(workdays);
+  return WORKDAY_DISPLAY_ORDER.filter((d) => set.has(d))
+    .map((d) => WEEKDAY_LABELS[d])
+    .join(", ");
+}
 
 export function formatRecurrenceLabel(raw: string): string {
   const rule = parseRecurrence(raw);
@@ -351,7 +397,11 @@ export function formatRecurrenceLabel(raw: string): string {
       parts.push("No se repite");
       break;
     case "daily":
-      parts.push(iv === 1 ? "Cada día" : `Cada ${iv} días`);
+      if (parseHourPlanWorkdays(rule.hourPlan?.workdays)) {
+        parts.push(iv === 1 ? "Cada día de trabajo" : `Cada ${iv} días de trabajo`);
+      } else {
+        parts.push(iv === 1 ? "Cada día" : `Cada ${iv} días`);
+      }
       break;
     case "weekly": {
       if (iv === 1) {
@@ -382,7 +432,9 @@ export function formatRecurrenceLabel(raw: string): string {
   if (rule.hourPlan) {
     const h = formatHourNumber(rule.hourPlan.everyHours);
     const d = formatHourNumber(rule.hourPlan.hoursPerDay);
-    parts.unshift(`Cada ${h} h de uso (${d} h/día)`);
+    const workdays = parseHourPlanWorkdays(rule.hourPlan.workdays);
+    const dayNote = workdays ? `, ${formatWorkdaysLabel(workdays)}` : "";
+    parts.unshift(`Cada ${h} h de uso (${d} h/día${dayNote})`);
   }
 
   if (rule.until) {
@@ -417,10 +469,17 @@ export function buildRecurrenceJson(rule: MaintenanceRecurrenceRule): string {
     normalized.excludedDates = Array.from(new Set(rule.excludedDates)).sort();
   }
   if (rule.hourPlan) {
-    normalized.hourPlan = {
-      hoursPerDay: rule.hourPlan.hoursPerDay,
-      everyHours: rule.hourPlan.everyHours,
-    };
+    const workdays = parseHourPlanWorkdays(rule.hourPlan.workdays);
+    normalized.hourPlan = workdays
+      ? {
+          hoursPerDay: rule.hourPlan.hoursPerDay,
+          everyHours: rule.hourPlan.everyHours,
+          workdays,
+        }
+      : {
+          hoursPerDay: rule.hourPlan.hoursPerDay,
+          everyHours: rule.hourPlan.everyHours,
+        };
   }
   return JSON.stringify(normalized);
 }

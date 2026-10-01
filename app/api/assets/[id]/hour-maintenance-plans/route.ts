@@ -47,6 +47,7 @@ export async function GET(
       hoursPerDay: assetHourMaintenancePlans.hoursPerDay,
       everyHours: assetHourMaintenancePlans.everyHours,
       startDate: assetHourMaintenancePlans.startDate,
+      workdays: assetHourMaintenancePlans.workdays,
       planCalendarId: assetHourMaintenancePlans.calendarId,
       planChecklistTemplateId: assetHourMaintenancePlans.checklistTemplateId,
       planColor: assetHourMaintenancePlans.color,
@@ -85,6 +86,7 @@ export async function GET(
         hoursPerDay: r.hoursPerDay,
         everyHours: r.everyHours,
         startDate: r.startDate,
+        workdays: r.workdays,
         calendarId: r.scheduleCalendarId ?? r.planCalendarId,
         calendarName: r.calendarName,
         checklistTemplateId:
@@ -144,6 +146,7 @@ export async function POST(
     hoursPerDay: parsed.value.hoursPerDay,
     everyHours: parsed.value.everyHours,
     anchorDate: parsed.value.startDate,
+    workdays: parsed.value.workdays,
   });
 
   const scheduleId = createId();
@@ -170,6 +173,7 @@ export async function POST(
     hoursPerDay: parsed.value.hoursPerDay,
     everyHours: parsed.value.everyHours,
     startDate: parsed.value.startDate,
+    workdays: parsed.value.workdays,
     calendarId: related.calendarId,
     checklistTemplateId: related.checklistTemplateId,
     color: parsed.value.color,
@@ -199,6 +203,7 @@ export async function POST(
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       startDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
     },
   });
 
@@ -209,6 +214,7 @@ export async function POST(
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       startDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
       calendarId: related.calendarId,
       calendarName: null,
       checklistTemplateId: related.checklistTemplateId,

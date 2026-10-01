@@ -45,3 +45,9 @@ Un modal «Mto. por horas» SHALL permitir configurar planes basados en horas de
 - **WHEN** configura 8 h/día y cada 250 h y crea el plan
 - **THEN** se crea un schedule con intervalo de 31 días
 - **AND** se redirige al calendario mostrando el primer evento
+
+#### Scenario: Días de trabajo
+- **GIVEN** un admin en el modal de mantenimiento por horas
+- **WHEN** indica 8 h/día, cada 250 h y solo lunes a viernes
+- **THEN** el intervalo sigue siendo 31 días de trabajo
+- **AND** los eventos posteriores al inicio caen solo en esos días (sábado y domingo no cuentan)

@@ -1,10 +1,15 @@
 import {
   buildRecurrenceJson,
+  formatWorkdaysLabel,
   nextScheduledOccurrenceOnOrAfter,
+  parseHourPlanWorkdays,
   parseRecurrence,
   type MaintenanceRecurrenceRule,
 } from "@/lib/maintenance-recurrence";
 import { calendarEventHref } from "@/lib/maintenance-schedule-work-order";
+
+/** 0=domingo … 6=sábado. Default: the machine runs every day. */
+export const ALL_HOUR_MAINTENANCE_WORKDAYS = [0, 1, 2, 3, 4, 5, 6];
 
 export const HOUR_MAINTENANCE_MAX_HOURS_PER_DAY = 24;
 export const HOUR_MAINTENANCE_MAX_EVERY_HOURS = 100_000;
@@ -32,7 +37,10 @@ export function isYmdDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
-/** Calendar days between events: round(everyHours / hoursPerDay), at least 1. */
+/**
+ * Operating days between events: round(everyHours / hoursPerDay), at least 1.
+ * When every weekday counts, that is also the calendar-day interval.
+ */
 export function operatingHoursToDayInterval(
   hoursPerDay: number,
   everyHours: number
@@ -44,21 +52,50 @@ export function operatingHoursToDayInterval(
   );
 }
 
+export function coerceHourMaintenanceWorkdays(raw: unknown): number[] {
+  if (raw === undefined || raw === null) return [...ALL_HOUR_MAINTENANCE_WORKDAYS];
+  if (!Array.isArray(raw)) return [...ALL_HOUR_MAINTENANCE_WORKDAYS];
+  const days = Array.from(
+    new Set(
+      raw
+        .map((n) => Number(n))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    )
+  ).sort((a, b) => a - b);
+  return days.length > 0 ? days : [...ALL_HOUR_MAINTENANCE_WORKDAYS];
+}
+
+function sameWorkdays(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  const left = [...a].sort((x, y) => x - y);
+  const right = [...b].sort((x, y) => x - y);
+  return left.every((n, i) => n === right[i]);
+}
+
 export function buildHourMaintenanceRecurrence(input: {
   hoursPerDay: number;
   everyHours: number;
   anchorDate: string;
   until?: string | null;
+  workdays?: number[];
 }): MaintenanceRecurrenceRule {
+  const workdays = coerceHourMaintenanceWorkdays(input.workdays);
+  const restricted = parseHourPlanWorkdays(workdays);
   return {
     frequency: "daily",
     interval: operatingHoursToDayInterval(input.hoursPerDay, input.everyHours),
     anchorDate: input.anchorDate,
     until: input.until ?? null,
-    hourPlan: {
-      hoursPerDay: input.hoursPerDay,
-      everyHours: input.everyHours,
-    },
+    hourPlan: restricted
+      ? {
+          hoursPerDay: input.hoursPerDay,
+          everyHours: input.everyHours,
+          workdays: restricted,
+        }
+      : {
+          hoursPerDay: input.hoursPerDay,
+          everyHours: input.everyHours,
+        },
   };
 }
 
@@ -67,14 +104,24 @@ export function hourMaintenanceSchedulePayload(input: {
   everyHours: number;
   anchorDate: string;
   until?: string | null;
+  workdays?: number[];
   from?: Date;
 }): { rule: MaintenanceRecurrenceRule; recurrence: string; nextRunAt: Date } {
   const rule = buildHourMaintenanceRecurrence(input);
   const recurrence = buildRecurrenceJson(rule);
   const from = input.from ?? new Date();
+  const workdayCount = parseHourPlanWorkdays(input.workdays)?.length ?? 7;
+  const horizonDays = Math.max(
+    370,
+    Math.ceil(rule.interval * (7 / workdayCount)) + 21
+  );
   const nextRunAt =
-    nextScheduledOccurrenceOnOrAfter(rule, from) ??
-    nextScheduledOccurrenceOnOrAfter(rule, new Date(rule.anchorDate + "T00:00:00")) ??
+    nextScheduledOccurrenceOnOrAfter(rule, from, horizonDays) ??
+    nextScheduledOccurrenceOnOrAfter(
+      rule,
+      new Date(rule.anchorDate + "T00:00:00"),
+      horizonDays
+    ) ??
     new Date();
   return { rule, recurrence, nextRunAt };
 }
@@ -92,13 +139,27 @@ export function preserveHourPlanInRecurrence(
 }
 
 export function hourPlanTimingChanged(
-  previous: { hoursPerDay: number; everyHours: number; startDate: string },
-  next: { hoursPerDay: number; everyHours: number; startDate: string }
+  previous: {
+    hoursPerDay: number;
+    everyHours: number;
+    startDate: string;
+    workdays?: number[];
+  },
+  next: {
+    hoursPerDay: number;
+    everyHours: number;
+    startDate: string;
+    workdays?: number[];
+  }
 ): boolean {
   return (
     previous.hoursPerDay !== next.hoursPerDay ||
     previous.everyHours !== next.everyHours ||
-    previous.startDate !== next.startDate
+    previous.startDate !== next.startDate ||
+    !sameWorkdays(
+      coerceHourMaintenanceWorkdays(previous.workdays),
+      coerceHourMaintenanceWorkdays(next.workdays)
+    )
   );
 }
 
@@ -107,15 +168,26 @@ function formatHoursLabel(n: number): string {
   return String(Math.round(n * 100) / 100);
 }
 
-/** Live form preview: operating hours plus the calendar day interval. */
+/** Live form preview: operating hours plus the interval on the selected work days. */
 export function formatHourMaintenancePreview(
   hoursPerDay: number,
-  everyHours: number
+  everyHours: number,
+  workdays?: number[] | null
 ): string | null {
   if (!(hoursPerDay > 0) || !(everyHours > 0)) return null;
   const days = operatingHoursToDayInterval(hoursPerDay, everyHours);
-  const dayPart = days === 1 ? "Cada 1 día" : `Cada ${days} días`;
-  return `Cada ${formatHoursLabel(everyHours)} h de uso (${formatHoursLabel(hoursPerDay)} h/día) · ${dayPart} en el calendario`;
+  const restricted = parseHourPlanWorkdays(workdays ?? undefined);
+  const dayPart = restricted
+    ? days === 1
+      ? "Cada 1 día de trabajo"
+      : `Cada ${days} días de trabajo`
+    : days === 1
+      ? "Cada 1 día"
+      : `Cada ${days} días`;
+  const where = restricted
+    ? ` (${formatWorkdaysLabel(restricted)})`
+    : " en el calendario";
+  return `Cada ${formatHoursLabel(everyHours)} h de uso (${formatHoursLabel(hoursPerDay)} h/día) · ${dayPart}${where}`;
 }
 
 export type HourMaintenancePlanView = {
@@ -124,6 +196,7 @@ export type HourMaintenancePlanView = {
   hoursPerDay: number;
   everyHours: number;
   startDate: string;
+  workdays: number[];
   calendarId: string | null;
   calendarName: string | null;
   checklistTemplateId: string | null;
@@ -141,6 +214,7 @@ export function hourMaintenancePlanView(input: {
   hoursPerDay: number;
   everyHours: number;
   startDate: string;
+  workdays?: number[];
   calendarId: string | null;
   calendarName: string | null;
   checklistTemplateId: string | null;
@@ -156,6 +230,7 @@ export function hourMaintenancePlanView(input: {
     hoursPerDay: input.hoursPerDay,
     everyHours: input.everyHours,
     startDate: input.startDate,
+    workdays: coerceHourMaintenanceWorkdays(input.workdays),
     calendarId: input.calendarId,
     calendarName: input.calendarName,
     checklistTemplateId: input.checklistTemplateId,
@@ -195,6 +270,7 @@ export type ParsedHourMaintenancePlanFields = {
   hoursPerDay: number;
   everyHours: number;
   startDate: string;
+  workdays: number[];
   calendarId: string | null;
   checklistTemplateId: string | null;
   color: string;
@@ -220,6 +296,22 @@ export function parseHourMaintenancePlanFields(
   }
   const nameRaw = typeof body.name === "string" ? body.name.trim() : "";
   const name = nameRaw || opts?.fallbackName || "Mantenimiento por horas";
+
+  let workdays = [...ALL_HOUR_MAINTENANCE_WORKDAYS];
+  if (body.workdays !== undefined) {
+    if (!Array.isArray(body.workdays)) {
+      return { ok: false, error: "Selecciona al menos un día de trabajo" };
+    }
+    const parsedDays = coerceHourMaintenanceWorkdays(body.workdays);
+    const validCount = body.workdays.filter((n) => {
+      const v = Number(n);
+      return Number.isInteger(v) && v >= 0 && v <= 6;
+    }).length;
+    if (validCount === 0 || parsedDays.length === 0) {
+      return { ok: false, error: "Selecciona al menos un día de trabajo" };
+    }
+    workdays = parsedDays;
+  }
 
   let assigneeIds: string[] = [];
   if (Array.isArray(body.assigneeIds)) {
@@ -248,6 +340,7 @@ export function parseHourMaintenancePlanFields(
       hoursPerDay,
       everyHours,
       startDate,
+      workdays,
       calendarId,
       checklistTemplateId,
       color,

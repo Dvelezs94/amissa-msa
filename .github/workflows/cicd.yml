@@ -7,6 +7,49 @@ on:
   workflow_dispatch:
 
 jobs:
+  changes:
+    name: Detect mobile-relevant changes
+    runs-on: ubuntu-latest
+    outputs:
+      mobile: ${{ steps.detect.outputs.mobile }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Detect mobile paths
+        id: detect
+        run: |
+          set -euo pipefail
+          # Keep globs in sync with lib/ci-mobile-paths.ts (mobile/**, .github/workflows/cicd.yml)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mobile=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+            FILES=$(git diff --name-only "${BASE}...${HEAD}")
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+            if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+              echo "mobile=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            FILES=$(git diff --name-only "$BASE" "$HEAD")
+          fi
+
+          MOBILE=$(printf '%s\n' "$FILES" | node --experimental-strip-types scripts/ci-has-mobile-changes.ts)
+          echo "mobile=${MOBILE}" >> "$GITHUB_OUTPUT"
+
   build:
     name: Test and validate Docker Compose
     runs-on: ubuntu-latest
@@ -57,6 +100,8 @@ jobs:
   mobile-android:
     name: Build Android APK (Expo)
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.mobile == 'true'
     env:
       EXPO_PUBLIC_API_HOST: https://msa.amissa.mx
     steps:
@@ -153,6 +198,12 @@ jobs:
     name: Deploy over SSH
     runs-on: ubuntu-latest
     needs: [build, mobile-android]
+    if: >
+      always() &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.build.result == 'success' &&
+      (needs.mobile-android.result == 'success' || needs.mobile-android.result == 'skipped')
     environment: production
     env:
       DEPLOY_HOST: 5.78.189.24
@@ -165,6 +216,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Android APK artifact
+        if: needs.mobile-android.result == 'success'
         uses: actions/download-artifact@v4
         with:
           name: android-apk
@@ -189,10 +241,12 @@ jobs:
             --exclude ".env" \
             --exclude "coverage/" \
             --exclude "public/uploads/" \
+            --exclude "downloads/" \
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
 
       - name: Copy Android APK to server downloads route
+        if: needs.mobile-android.result == 'success'
         run: |
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_APK_PATH}'"
           rsync -az \

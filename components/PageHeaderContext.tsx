@@ -72,31 +72,32 @@ function usePageHeaderSetters() {
 
 /**
  * Set sticky header title/actions for the lifetime of the calling component.
- * Omitting `filters` leaves any filters set by another caller (e.g. layout breadcrumb).
+ * Omitting `filters` or `actions` leaves values set by another caller.
  */
 export function useSetPageHeader(content: PageHeaderContent) {
   const { patchHeader } = usePageHeaderSetters();
   const { title, subtitle, filters, actions } = content;
   const includeFilters = Object.prototype.hasOwnProperty.call(content, "filters");
+  const includeActions = Object.prototype.hasOwnProperty.call(content, "actions");
 
   useEffect(() => {
     const patch: PageHeaderContent = {
       title: title ?? null,
       subtitle: subtitle ?? null,
-      actions: actions ?? null,
     };
     if (includeFilters) patch.filters = filters ?? null;
+    if (includeActions) patch.actions = actions ?? null;
     patchHeader(patch);
     return () => {
       const clear: PageHeaderContent = {
         title: null,
         subtitle: null,
-        actions: null,
       };
       if (includeFilters) clear.filters = null;
+      if (includeActions) clear.actions = null;
       patchHeader(clear);
     };
-  }, [title, subtitle, filters, actions, includeFilters, patchHeader]);
+  }, [title, subtitle, filters, actions, includeFilters, includeActions, patchHeader]);
 }
 
 /** Set content-toolbar filters (left) without owning title/actions. */
@@ -107,6 +108,16 @@ export function usePageHeaderFilters(filters: ReactNode) {
     patchHeader({ filters });
     return () => patchHeader({ filters: null });
   }, [filters, patchHeader]);
+}
+
+/** Set content-toolbar actions (right) without owning title/filters. */
+export function usePageHeaderActions(actions: ReactNode) {
+  const { patchHeader } = usePageHeaderSetters();
+
+  useEffect(() => {
+    patchHeader({ actions });
+    return () => patchHeader({ actions: null });
+  }, [actions, patchHeader]);
 }
 
 /** Longest-prefix match for default section titles in the sticky header. */

@@ -39,7 +39,7 @@ export default async function HomePage() {
           href="/orden/consultar"
           className="rounded-xl border border-primary-200 bg-primary-50 py-3 px-4 text-center font-medium text-primary-800 tap-target hover:bg-primary-100"
         >
-          Consultar orden por folio
+          Consultar por folio o email
         </Link>
       </div>
       <AndroidAppDownloadLink />

@@ -33,6 +33,7 @@ async function loadPlan(assetId: string, planId: string) {
       hoursPerDay: assetHourMaintenancePlans.hoursPerDay,
       everyHours: assetHourMaintenancePlans.everyHours,
       startDate: assetHourMaintenancePlans.startDate,
+      workdays: assetHourMaintenancePlans.workdays,
       scheduleId: assetHourMaintenancePlans.scheduleId,
       scheduleName: maintenanceSchedules.name,
       scheduleCalendarId: maintenanceSchedules.calendarId,
@@ -110,11 +111,13 @@ export async function PATCH(
       hoursPerDay: existing.hoursPerDay,
       everyHours: existing.everyHours,
       startDate: existing.startDate,
+      workdays: existing.workdays,
     },
     {
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       startDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
     }
   );
 
@@ -139,6 +142,7 @@ export async function PATCH(
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       anchorDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
     });
     scheduleSet.recurrence = payload.recurrence;
     scheduleSet.nextRunAt = payload.nextRunAt;
@@ -168,6 +172,7 @@ export async function PATCH(
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       startDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
       calendarId: related.calendarId,
       checklistTemplateId: related.checklistTemplateId,
       color: parsed.value.color,
@@ -193,6 +198,7 @@ export async function PATCH(
       hoursPerDay: parsed.value.hoursPerDay,
       everyHours: parsed.value.everyHours,
       startDate: parsed.value.startDate,
+      workdays: parsed.value.workdays,
       calendarId: related.calendarId,
       calendarName: existing.calendarName,
       checklistTemplateId: related.checklistTemplateId,
@@ -281,6 +287,7 @@ export async function GET(
       hoursPerDay: existing.hoursPerDay,
       everyHours: existing.everyHours,
       startDate: existing.startDate,
+      workdays: existing.workdays,
       calendarId: existing.scheduleCalendarId,
       calendarName: existing.calendarName,
       checklistTemplateId: existing.scheduleChecklistTemplateId,

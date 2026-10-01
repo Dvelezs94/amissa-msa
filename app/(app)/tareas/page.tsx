@@ -8,8 +8,11 @@ export default async function WorkOrdersPage() {
   if (!session) redirect("/login");
   return (
     <div className="space-y-4">
-      <TareasPageHeader isAdmin={session.role === "admin"} />
-      <WorkOrderList />
+      <TareasPageHeader />
+      <WorkOrderList
+        currentUserId={session.id}
+        isAdmin={session.role === "admin"}
+      />
     </div>
   );
 }

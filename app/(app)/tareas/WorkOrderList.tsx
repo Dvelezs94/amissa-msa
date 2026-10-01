@@ -12,10 +12,24 @@ import {
   Equal,
   GripVertical,
   Minus,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
+import { usePageHeaderActions } from "@/components/PageHeaderContext";
 import { UserAvatar } from "@/components/UserAvatar";
+import { WorkOrderStatusColorsSettings } from "@/components/WorkOrderStatusColorsSettings";
 import { useRouter, useSearchParams } from "next/navigation";
-import { parseWorkOrderKind, workOrderKindLabel } from "@/lib/work-order-kind";
+import {
+  parseWorkOrderKind,
+  WORK_ORDER_KIND_FILTERS,
+  workOrderKindLabel,
+  workOrderMatchesKindFilter,
+  type WorkOrderKindFilter,
+} from "@/lib/work-order-kind";
+import {
+  WorkOrderFiltersDialog,
+  type WorkOrderFilterUser,
+} from "./WorkOrderFiltersDialog";
 import { APP_TIME_ZONE } from "@/lib/timezone";
 import {
   formatWorkOrderElapsedCompact,
@@ -51,7 +65,7 @@ type WorkOrderRow = {
 };
 
 type BoardStatus = "pending" | "in_progress" | "completed";
-type UserOption = { id: string; name: string };
+type UserOption = WorkOrderFilterUser;
 
 const boardColumns: { key: BoardStatus; title: string }[] = [
   { key: "pending", title: "Pendientes" },
@@ -182,7 +196,13 @@ function insertionIndexFromPointer(
   return elements.length;
 }
 
-export function WorkOrderList() {
+export function WorkOrderList({
+  currentUserId = null,
+  isAdmin = false,
+}: {
+  currentUserId?: string | null;
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQueryRaw = (searchParams.get("q") ?? "").trim();
@@ -191,7 +211,40 @@ export function WorkOrderList() {
   const [items, setItems] = useState<WorkOrderRow[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<WorkOrderKindFilter>("all");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const activeFilterCount =
+    (kindFilter !== "all" ? 1 : 0) + (selectedAssigneeId ? 1 : 0);
+  const headerActions = useMemo(
+    () => (
+      <>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen(true)}
+          aria-haspopup="dialog"
+          className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50 tap-target"
+        >
+          <SlidersHorizontal className="h-4 w-4 text-zinc-500" aria-hidden />
+          Filtros
+          {activeFilterCount > 0 ? (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-[11px] font-semibold text-white">
+              {activeFilterCount}
+            </span>
+          ) : null}
+        </button>
+        {isAdmin ? <WorkOrderStatusColorsSettings /> : null}
+        <Link
+          href="/tareas/new"
+          className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white tap-target hover:bg-primary-700"
+        >
+          Nueva tarea
+        </Link>
+      </>
+    ),
+    [activeFilterCount, isAdmin]
+  );
+  usePageHeaderActions(headerActions);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<BoardStatus | null>(null);
   const [insertIndicator, setInsertIndicator] = useState<{
@@ -247,13 +300,16 @@ export function WorkOrderList() {
 
   useEffect(() => {
     setCompletedVisibleCount(COMPLETED_PAGE_SIZE);
-  }, [selectedAssigneeId, isSearching, q]);
+  }, [selectedAssigneeId, isSearching, q, kindFilter]);
 
   const filteredItems = useMemo(() => {
-    if (!q) return items;
+    const byKind = items.filter((wo) =>
+      workOrderMatchesKindFilter(wo.kind, kindFilter)
+    );
+    if (!q) return byKind;
     const folioPhrase = q.replace(/^folio\s*#?\s*/i, "").replace(/^#\s*/, "").trim();
     const isNumericFolio = /^\d+$/.test(folioPhrase);
-    return items.filter((wo) => {
+    return byKind.filter((wo) => {
       if (isNumericFolio && wo.folio != null && String(wo.folio) === folioPhrase) {
         return true;
       }
@@ -274,7 +330,7 @@ export function WorkOrderList() {
         .toLowerCase();
       return haystack.includes(q) || (folioPhrase && haystack.includes(folioPhrase));
     });
-  }, [items, q]);
+  }, [items, q, kindFilter]);
 
   const needsLiveDuration = useMemo(
     () => filteredItems.some((w) => w.status === "in_progress"),
@@ -289,7 +345,7 @@ export function WorkOrderList() {
 
   // Reordering is safe as long as we are not in text search mode.
   // With assignee filter active, `items` is still the full dataset for that filtered scope.
-  const canReorderColumn = !isSearching;
+  const canReorderColumn = !isSearching && kindFilter === "all";
 
   async function persistColumnOrder(
     column: BoardStatus,
@@ -361,17 +417,33 @@ export function WorkOrderList() {
     }
   }
 
+  const filtersDialog = (
+    <WorkOrderFiltersDialog
+      open={filtersOpen}
+      onClose={() => setFiltersOpen(false)}
+      kindFilter={kindFilter}
+      onKindFilterChange={setKindFilter}
+      users={users}
+      currentUserId={currentUserId}
+      selectedAssigneeId={selectedAssigneeId}
+      onAssigneeChange={setSelectedAssigneeId}
+    />
+  );
+
   if (loading) {
     return (
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-24 rounded-xl border border-zinc-200 bg-zinc-100/70 dark:border-slate-700 dark:bg-slate-800/70 animate-pulse"
-            aria-hidden
-          />
-        ))}
-      </div>
+      <>
+        {filtersDialog}
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-24 rounded-xl border border-zinc-200 bg-zinc-100/70 dark:border-slate-700 dark:bg-slate-800/70 animate-pulse"
+              aria-hidden
+            />
+          ))}
+        </div>
+      </>
     );
   }
 
@@ -396,54 +468,15 @@ export function WorkOrderList() {
           No se encontraron tareas para esa búsqueda.
         </div>
       )}
-      <div className="rounded-xl border border-zinc-200 bg-white p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm text-zinc-500">Asignado:</p>
-          {selectedAssigneeId ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs font-medium">
-              <span className="text-zinc-900 shrink-0">
-                {users.find((u) => u.id === selectedAssigneeId)?.name ?? "Usuario"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedAssigneeId(null)}
-                className="border-0 bg-transparent p-0 font-bold text-[#FFBF8A] hover:text-accent-200"
-              >
-                Quitar
-              </button>
-            </span>
-          ) : (
-            <span className="text-xs text-zinc-500">Todos</span>
-          )}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedAssigneeId(null)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium ${
-              selectedAssigneeId == null
-                ? "border-primary-500 bg-primary-600 text-white"
-                : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
-            }`}
-          >
-            Todos
-          </button>
-          {users.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => setSelectedAssigneeId(user.id)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                selectedAssigneeId === user.id
-                  ? "border-primary-500 bg-primary-600 text-white"
-                  : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50"
-              }`}
-            >
-              {user.name}
-            </button>
-          ))}
-        </div>
-      </div>
+      {filtersDialog}
+      <WorkOrderFilterChips
+        kindFilter={kindFilter}
+        selectedAssigneeName={
+          users.find((user) => user.id === selectedAssigneeId)?.name ?? null
+        }
+        onClearKind={() => setKindFilter("all")}
+        onClearAssignee={() => setSelectedAssigneeId(null)}
+      />
       {items.length === 0 && !q && (
         <div className="rounded-xl border border-zinc-200 bg-white p-6 text-center">
           <p className="text-zinc-500">Sin tareas.</p>
@@ -783,5 +816,49 @@ export function WorkOrderList() {
         })}
       </div>
     </div>
+  );
+}
+
+function WorkOrderFilterChips({
+  kindFilter,
+  selectedAssigneeName,
+  onClearKind,
+  onClearAssignee,
+}: {
+  kindFilter: WorkOrderKindFilter;
+  selectedAssigneeName: string | null;
+  onClearKind: () => void;
+  onClearAssignee: () => void;
+}) {
+  const kindLabel =
+    WORK_ORDER_KIND_FILTERS.find((option) => option.value === kindFilter)?.label ??
+    "Todas";
+  if (kindFilter === "all" && !selectedAssigneeName) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {kindFilter !== "all" ? (
+        <FilterChip label={kindLabel} onClear={onClearKind} />
+      ) : null}
+      {selectedAssigneeName ? (
+        <FilterChip label={selectedAssigneeName} onClear={onClearAssignee} />
+      ) : null}
+    </div>
+  );
+}
+
+function FilterChip({ label, onClear }: { label: string; onClear: () => void }) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary-200 bg-primary-50 py-1 pl-3 pr-1 text-xs font-medium text-primary-900">
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onClear}
+        aria-label={`Quitar filtro ${label}`}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full text-primary-800 hover:bg-primary-100"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </span>
   );
 }

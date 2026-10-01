@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { assets, attachments, notes, users, workOrders } from "@/lib/db/schema";
@@ -6,6 +6,10 @@ import { createId } from "@/lib/id";
 import { recordAuditLog } from "@/lib/audit";
 import { getNextWorkOrderFolio } from "@/lib/work-order-folio";
 import { publicWebWorkOrderFilter } from "@/lib/public-web-work-order-filter";
+import {
+  parsePublicOrderLookup,
+  publicContactEmailLinePattern,
+} from "@/lib/public-order-lookup";
 import {
   buildPublicAttachmentUrlMaps,
   extractInlineFilesFromRewrittenNote,
@@ -16,9 +20,56 @@ import { buildWorkflowEvent } from "@/lib/workflows";
 
 export const dynamic = "force-dynamic";
 
-/** Public lookup by folio: solo ordenes desde formulario publico; sin id interno; adjuntos con `?folio=`. */
+/** Public lookup by folio or contact email. Solo ordenes del formulario publico. */
 export async function GET(req: Request) {
   const url = new URL(req.url);
+  const emailRaw = url.searchParams.get("email")?.trim() ?? "";
+  if (emailRaw) {
+    const parsed = parsePublicOrderLookup(emailRaw);
+    if (!parsed.ok || parsed.value.kind !== "email") {
+      return NextResponse.json({ error: "Email no válido." }, { status: 400 });
+    }
+    const email = parsed.value.email;
+    const rows = await db
+      .select({
+        folio: workOrders.folio,
+        title: workOrders.title,
+        status: workOrders.status,
+        createdAt: workOrders.createdAt,
+        assetName: assets.name,
+        assetCode: assets.assetId,
+      })
+      .from(workOrders)
+      .leftJoin(assets, eq(workOrders.assetId, assets.id))
+      .where(
+        and(
+          publicWebWorkOrderFilter,
+          isNotNull(workOrders.folio),
+          sql`${workOrders.description} ~* ${publicContactEmailLinePattern(email)}`
+        )
+      )
+      .orderBy(desc(workOrders.createdAt))
+      .limit(50);
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: "No se encontró una orden con ese email." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      orders: rows.map((row) => ({
+        folio: row.folio,
+        title: row.title,
+        status: row.status,
+        createdAt: row.createdAt?.toISOString() ?? null,
+        assetName: row.assetName ?? null,
+        assetCode: row.assetCode ?? null,
+      })),
+    });
+  }
+
   const raw = url.searchParams.get("folio")?.trim() ?? "";
   if (!raw) {
     return NextResponse.json({ error: "Indica el folio de la orden." }, { status: 400 });

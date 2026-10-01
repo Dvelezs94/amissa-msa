@@ -210,7 +210,7 @@ export default function OrdenPublicaPage() {
         <p className="text-center text-sm text-zinc-600">
           ¿Ya tienes un folio?{" "}
           <Link href="/orden/consultar" className="font-medium text-primary-600">
-            Consultar orden por folio
+            Consultar por folio o email
           </Link>
         </p>
 

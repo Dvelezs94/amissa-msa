@@ -164,9 +164,11 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
           </h3>
           <p className="text-sm text-zinc-600">
             En el detalle de la máquina, el botón <strong>Mto. por horas</strong>{" "}
-            abre un modal: indicas horas de uso por día y cada cuántas horas de
-            uso hay que programar. MSA calcula cada cuántos días cae en el
-            calendario (redondeando) y crea los eventos.
+            abre un modal: indicas horas de uso por día, los días que trabaja la
+            máquina y cada cuántas horas de uso hay que programar. MSA redondea
+            horas ÷ horas por día y cuenta solo esos días al crear los eventos.
+            Si marcas todos los días, el intervalo es de calendario; si no, los
+            días apagados no suman horas.
           </p>
           <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-sm">
             <p className="text-xs font-semibold uppercase text-zinc-500">
@@ -176,7 +178,8 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
               Mto. por horas — Prensa 1
             </p>
             <p className="text-zinc-600">
-              Cada 250 h de uso (8 h/día) · Cada 31 días en el calendario
+              Cada 250 h de uso (8 h/día) · Cada 31 días de trabajo (Lun, Mar,
+              Mié, Jue, Vie)
             </p>
           </div>
         </>
@@ -202,7 +205,7 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
           <p>
             Cualquiera puede levantar una solicitud pública en{" "}
             <code className="rounded bg-zinc-100 px-1 text-xs">/orden</code>{" "}
-            (sin iniciar sesión) y consultar el folio en{" "}
+            (sin iniciar sesión) y consultar el folio, o el email de contacto, en{" "}
             <code className="rounded bg-zinc-100 px-1 text-xs">/orden/consultar</code>.
             El equipo de mantenimiento la ve en Solicitudes y puede convertirla
             en tarea.

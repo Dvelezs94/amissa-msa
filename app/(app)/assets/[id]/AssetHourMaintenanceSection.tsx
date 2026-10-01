@@ -6,6 +6,7 @@ import { Clock, Pencil, Trash2, X } from "lucide-react";
 import { AssigneeMultiSelect } from "@/components/AssigneeMultiSelect";
 import { DEFAULT_CALENDAR_ID } from "@/lib/calendar-helpers";
 import {
+  ALL_HOUR_MAINTENANCE_WORKDAYS,
   defaultHourMaintenancePlanName,
   formatHourMaintenancePreview,
   hourMaintenanceTriggerLabel,
@@ -16,7 +17,10 @@ import {
 } from "@/lib/hour-maintenance";
 import { useSheetModalPresence } from "@/lib/use-sheet-modal-presence";
 import { APP_TIME_ZONE } from "@/lib/timezone";
-import { MAINTENANCE_EVENT_COLORS } from "@/app/(app)/calendario/maintenance-schedule-form-constants";
+import {
+  MAINTENANCE_EVENT_COLORS,
+  MAINTENANCE_WEEKDAYS,
+} from "@/app/(app)/calendario/maintenance-schedule-form-constants";
 
 type SelectOption = { id: string; name: string };
 
@@ -31,6 +35,7 @@ function emptyForm(assetName: string, defaultCalendarId: string) {
     name: defaultHourMaintenancePlanName(assetName),
     hoursPerDay: "8",
     everyHours: "250",
+    workdays: [...ALL_HOUR_MAINTENANCE_WORKDAYS],
     startDate: todayYmd(),
     calendarId: defaultCalendarId,
     checklistTemplateId: "",
@@ -90,8 +95,23 @@ export function AssetHourMaintenanceSection({
     const hoursPerDay = parseHoursPerDay(form.hoursPerDay);
     const everyHours = parseEveryHours(form.everyHours);
     if (hoursPerDay == null || everyHours == null) return null;
-    return formatHourMaintenancePreview(hoursPerDay, everyHours);
-  }, [form.hoursPerDay, form.everyHours]);
+    return formatHourMaintenancePreview(
+      hoursPerDay,
+      everyHours,
+      form.workdays
+    );
+  }, [form.hoursPerDay, form.everyHours, form.workdays]);
+
+  function toggleWorkday(day: number) {
+    setForm((f) => {
+      const selected = f.workdays.includes(day);
+      if (selected && f.workdays.length === 1) return f;
+      const workdays = selected
+        ? f.workdays.filter((d) => d !== day)
+        : [...f.workdays, day].sort((a, b) => a - b);
+      return { ...f, workdays };
+    });
+  }
 
   function fillForm(plan: HourMaintenancePlanView) {
     setEditingId(plan.id);
@@ -99,6 +119,7 @@ export function AssetHourMaintenanceSection({
       name: plan.name,
       hoursPerDay: String(plan.hoursPerDay),
       everyHours: String(plan.everyHours),
+      workdays: [...plan.workdays],
       startDate: plan.startDate,
       calendarId: plan.calendarId || defaultCalendarId,
       checklistTemplateId: plan.checklistTemplateId || "",
@@ -129,6 +150,7 @@ export function AssetHourMaintenanceSection({
           name: form.name.trim(),
           hoursPerDay: form.hoursPerDay,
           everyHours: form.everyHours,
+          workdays: form.workdays,
           startDate: form.startDate,
           calendarId: form.calendarId || defaultCalendarId,
           checklistTemplateId: form.checklistTemplateId || null,
@@ -230,10 +252,10 @@ export function AssetHourMaintenanceSection({
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-4">
               <p className="text-xs text-zinc-500">
-                Indica cuántas horas trabaja la máquina al día y cada cuántas horas de
-                uso hay que programar un mantenimiento. El calendario crea los eventos
-                automáticamente (un evento cada N días, redondeando horas ÷ horas por
-                día).
+                Indica cuántas horas trabaja la máquina al día, qué días trabaja y cada
+                cuántas horas de uso hay que programar un mantenimiento. El calendario
+                cuenta solo esos días (un evento cada N días de trabajo, redondeando
+                horas ÷ horas por día).
               </p>
 
       {error ? (
@@ -265,7 +287,8 @@ export function AssetHourMaintenanceSection({
                 <p className="text-xs text-zinc-500">
                   {formatHourMaintenancePreview(
                     plan.hoursPerDay,
-                    plan.everyHours
+                    plan.everyHours,
+                    plan.workdays
                   )}
                 </p>
                 {plan.calendarName ? (
@@ -377,6 +400,36 @@ export function AssetHourMaintenanceSection({
               }
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-zinc-600" id="hp-workdays">
+            Días que trabaja
+          </p>
+          <div
+            className="flex flex-wrap gap-2"
+            role="group"
+            aria-labelledby="hp-workdays"
+          >
+            {MAINTENANCE_WEEKDAYS.map((w) => {
+              const selected = form.workdays.includes(w.value);
+              return (
+                <button
+                  key={w.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleWorkday(w.value)}
+                  className={`tap-target rounded-full border px-2.5 py-1 text-xs ${
+                    selected
+                      ? "border-primary-400 bg-primary-50 text-primary-900"
+                      : "border-zinc-200 bg-zinc-50 text-zinc-600"
+                  }`}
+                >
+                  {w.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

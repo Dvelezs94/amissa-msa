@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { filterUsersByAssigneeQuery } from "@/lib/assignee-search";
+import {
+  filterUsersByAssigneeQuery,
+  orderAssigneeFilterUsers,
+} from "@/lib/assignee-search";
 
 const users = [
   { id: "1", name: "Administrador" },
@@ -7,6 +10,23 @@ const users = [
   { id: "3", name: "Técnico Turno A" },
   { id: "4", name: "Inspector de Calidad" },
 ];
+
+describe("orderAssigneeFilterUsers", () => {
+  it("puts the current user first and sorts the rest", () => {
+    expect(
+      orderAssigneeFilterUsers(users, "", "3").map((u) => u.id)
+    ).toEqual(["3", "1", "4", "2"]);
+  });
+
+  it("filters by name and still keeps the current user first", () => {
+    expect(
+      orderAssigneeFilterUsers(users, "turno", "3").map((u) => u.id)
+    ).toEqual(["3"]);
+    expect(orderAssigneeFilterUsers(users, "jose", "1").map((u) => u.name)).toEqual([
+      "José García",
+    ]);
+  });
+});
 
 describe("filterUsersByAssigneeQuery", () => {
   it("returns nothing until the user types", () => {
