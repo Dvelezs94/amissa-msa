@@ -3,6 +3,8 @@ import {
   DEFAULT_CALENDAR_ID,
   countSchedulesByCalendarNav,
   filterSchedulesByCalendarNav,
+  calendarCanBeDeleted,
+  calendarNameCanChange,
   isDefaultCalendarId,
   resolveDefaultCalendarId,
   sortCalendars,
@@ -47,6 +49,15 @@ describe("isDefaultCalendarId", () => {
   it("matches stable id", () => {
     expect(isDefaultCalendarId(DEFAULT_CALENDAR_ID)).toBe(true);
     expect(isDefaultCalendarId("other")).toBe(false);
+  });
+});
+
+describe("calendar name and delete policy", () => {
+  it("allows renaming the built-in calendar and blocks deleting it", () => {
+    expect(calendarNameCanChange(DEFAULT_CALENDAR_ID)).toBe(true);
+    expect(calendarNameCanChange("other")).toBe(true);
+    expect(calendarCanBeDeleted(DEFAULT_CALENDAR_ID)).toBe(false);
+    expect(calendarCanBeDeleted("other")).toBe(true);
   });
 });
 

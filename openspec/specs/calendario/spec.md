@@ -6,12 +6,22 @@ Calendarios de mantenimiento, recurrencia de eventos, creación de tareas desde 
 ## Requirements
 
 ### Requirement: Calendarios nombrados
-El sistema SHALL soportar calendarios nombrados con un default «Mantenimiento».
+El sistema SHALL soportar calendarios nombrados. El calendario integrado (`cal_mantenimiento`) nace como «Mantenimiento». Un administrador o un usuario con rol `calidad` (supervisor) MAY cambiar su nombre, y el sistema MUST NOT permitir eliminarlo.
 
 #### Scenario: Nuevo schedule sin calendario asignado
 - **GIVEN** un schedule creado sin calendar_id
 - **WHEN** se guarda
-- **THEN** se asigna al calendario default «Mantenimiento»
+- **THEN** se asigna al calendario default
+
+#### Scenario: Renombrar el calendario principal
+- **GIVEN** el calendario integrado
+- **WHEN** un administrador o un usuario calidad cambia su nombre
+- **THEN** el calendario conserva su id y muestra el nombre nuevo
+
+#### Scenario: No se elimina el calendario principal
+- **GIVEN** el calendario integrado
+- **WHEN** un administrador intenta eliminarlo
+- **THEN** el calendario permanece
 
 ### Requirement: Recurrencia de mantenimiento
 Los eventos SHALL soportar recurrencia configurable (diaria, semanal, mensual, etc.).

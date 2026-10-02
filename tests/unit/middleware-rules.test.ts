@@ -105,6 +105,11 @@ describe("isCalidad*PathAllowed", () => {
     expect(isCalidadAppPathAllowed("/checklists")).toBe(true);
     expect(isCalidadAppPathAllowed("/checklists/abc")).toBe(true);
     expect(isCalidadAppPathAllowed("/tareas")).toBe(true);
+    expect(isCalidadAppPathAllowed("/calendario")).toBe(true);
+    expect(isCalidadApiPathAllowed("/api/calendars")).toBe(true);
+    expect(isCalidadApiPathAllowed("/api/calendars/cal_mantenimiento")).toBe(
+      true
+    );
     expect(isCalidadAppPathAllowed("/tareas/abc")).toBe(true);
     expect(isCalidadAppPathAllowed("/equipo/user1")).toBe(true);
     expect(isCalidadAppPathAllowed("/buscar")).toBe(true);
@@ -124,7 +129,7 @@ describe("isCalidad*PathAllowed", () => {
   });
 
   it("blocks non-whitelisted calidad paths", () => {
-    expect(isCalidadAppPathAllowed("/calendario")).toBe(false);
+    expect(isCalidadAppPathAllowed("/dashboard")).toBe(false);
     expect(isCalidadAppPathAllowed("/assets")).toBe(false);
     expect(isCalidadAppPathAllowed("/flujos")).toBe(false);
     expect(isCalidadApiPathAllowed("/api/admin/users")).toBe(false);

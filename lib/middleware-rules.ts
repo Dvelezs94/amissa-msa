@@ -25,6 +25,7 @@ export const TECNICO_ALLOWED_APP_PREFIXES = [
 export const CALIDAD_ALLOWED_APP_PREFIXES = [
   "/checklists",
   "/tareas",
+  "/calendario",
   "/equipo",
   "/buscar",
   "/documentacion",
@@ -52,6 +53,7 @@ export const CALIDAD_ALLOWED_API_PREFIXES = [
   "/api/work-orders",
   "/api/assets",
   "/api/asset-groups",
+  "/api/calendars",
   "/api/users",
   "/api/notifications",
   "/api/users/me/avatar",

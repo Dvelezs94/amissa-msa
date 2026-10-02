@@ -11,6 +11,7 @@ import {
   sortCalendars,
   DEFAULT_CALENDAR_ID,
   DEFAULT_CALENDAR_NAME,
+  calendarCanBeDeleted,
   isDefaultCalendarId,
   resolveDefaultCalendarId,
   type CalendarNavId,
@@ -35,12 +36,16 @@ export function CalendarWorkspace({
   assets,
   users,
   checklistTemplates,
+  canRenameCalendars = false,
+  canManageEvents = false,
 }: {
   calendars: CalendarOption[];
   schedules: CalendarSchedulePayload[];
   assets: { id: string; name: string; sublabel?: string }[];
   users: { id: string; name: string; avatarUrl?: string | null }[];
   checklistTemplates: { id: string; name: string }[];
+  canRenameCalendars?: boolean;
+  canManageEvents?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -180,11 +185,15 @@ export function CalendarWorkspace({
     }
   }
 
+  const defaultCalendarName =
+    calendars.find((c) => isDefaultCalendarId(c.id))?.name ??
+    DEFAULT_CALENDAR_NAME;
+
   async function deleteCalendar(id: string) {
-    if (isDefaultCalendarId(id)) return;
+    if (!calendarCanBeDeleted(id)) return;
     if (
       !window.confirm(
-        `¿Eliminar este calendario? Los eventos pasarán a «${DEFAULT_CALENDAR_NAME}».`
+        `¿Eliminar este calendario? Los eventos pasarán a «${defaultCalendarName}».`
       )
     ) {
       return;
@@ -198,7 +207,7 @@ export function CalendarWorkspace({
   }
 
   async function saveEditCalendar() {
-    if (!editCalendar || isDefaultCalendarId(editCalendar.id)) return;
+    if (!editCalendar) return;
     const name = editCalendar.name.trim();
     if (!name) return;
     const original = calendars.find((c) => c.id === editCalendar.id);
@@ -313,7 +322,7 @@ export function CalendarWorkspace({
     subtitle: headerTitle,
     actions: (
       <>
-        {activeCalendar && !isDefaultCalendarId(activeCalendar.id) ? (
+        {activeCalendar && canRenameCalendars ? (
           <>
             <button
               type="button"
@@ -328,27 +337,32 @@ export function CalendarWorkspace({
             >
               <Pencil className="h-4 w-4" />
             </button>
-            <button
-              type="button"
-              className="tap-target rounded-lg border border-zinc-300 bg-white p-2 text-zinc-500 hover:bg-red-50 hover:text-red-700"
-              title="Eliminar calendario"
-              onClick={() => void deleteCalendar(activeCalendar.id)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {canManageEvents && calendarCanBeDeleted(activeCalendar.id) ? (
+              <button
+                type="button"
+                className="tap-target rounded-lg border border-zinc-300 bg-white p-2 text-zinc-500 hover:bg-red-50 hover:text-red-700"
+                title="Eliminar calendario"
+                onClick={() => void deleteCalendar(activeCalendar.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : null}
           </>
         ) : null}
-        <button
-          type="button"
-          onClick={() => {
-            setNewName("");
-            setCreateDialogOpen(true);
-          }}
-          className="tap-target inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-        >
-          <CalendarPlus className="h-4 w-4" />
-          <span className="hidden sm:inline">Nuevo calendario</span>
-        </button>
+        {canManageEvents ? (
+          <button
+            type="button"
+            onClick={() => {
+              setNewName("");
+              setCreateDialogOpen(true);
+            }}
+            className="tap-target inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            <CalendarPlus className="h-4 w-4" />
+            <span className="hidden sm:inline">Nuevo calendario</span>
+          </button>
+        ) : null}
+        {canManageEvents ? (
         <CalendarCreateEventModal
           assets={assets}
           users={users}
@@ -360,6 +374,7 @@ export function CalendarWorkspace({
           defaultCalendarId={defaultCalendarId}
           onOpenChange={setCreateEventOpen}
         />
+        ) : null}
       </>
     ),
   });
@@ -416,6 +431,7 @@ export function CalendarWorkspace({
             onBusyChange={setMonthViewBusy}
             focusSchedule={focusEvent?.schedule ?? null}
             focusDateYmd={focusEvent?.dateYmd ?? null}
+            canManageEvents={canManageEvents}
           />
         </div>
       </div>

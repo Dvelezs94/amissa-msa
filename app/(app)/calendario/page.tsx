@@ -1,4 +1,9 @@
 import { Suspense } from "react";
+import { getSession } from "@/lib/auth";
+import {
+  canManageCalendarEvents,
+  canRenameCalendar,
+} from "@/lib/auth-shared";
 import { db } from "@/lib/db";
 import {
   maintenanceSchedules,
@@ -16,6 +21,9 @@ import { DeletedSchedulesSection } from "./DeletedSchedulesSection";
 export const dynamic = "force-dynamic";
 
 export default async function CalendarioPage() {
+  const session = await getSession();
+  const canRenameCalendars = canRenameCalendar(session?.role);
+  const canManageEvents = canManageCalendarEvents(session?.role);
   await assignOrphanSchedulesToDefaultCalendar();
 
   const userList = await db
@@ -114,17 +122,21 @@ export default async function CalendarioPage() {
           }))}
           users={userList}
           checklistTemplates={templateOptions}
+          canRenameCalendars={canRenameCalendars}
+          canManageEvents={canManageEvents}
         />
       </Suspense>
 
-      <DeletedSchedulesSection
-        initial={deletedInitial.map((d) => ({
-          id: d.id,
-          name: d.name,
-          deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
-        }))}
-        initialHasMore={deletedInitialHasMore}
-      />
+      {canManageEvents ? (
+        <DeletedSchedulesSection
+          initial={deletedInitial.map((d) => ({
+            id: d.id,
+            name: d.name,
+            deletedAt: d.deletedAt ? d.deletedAt.toISOString() : null,
+          }))}
+          initialHasMore={deletedInitialHasMore}
+        />
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import {
   AVAILABLE_USER_ROLES,
   canDeleteWorkOrder,
   canEditLockedWorkOrderChecklist,
+  canManageCalendarEvents,
+  canRenameCalendar,
 } from "@/lib/auth-shared";
 
 describe("AVAILABLE_USER_ROLES", () => {
@@ -19,6 +21,23 @@ describe("canEditLockedWorkOrderChecklist", () => {
     expect(canEditLockedWorkOrderChecklist("admin")).toBe(true);
     expect(canEditLockedWorkOrderChecklist("calidad")).toBe(true);
     expect(canEditLockedWorkOrderChecklist("tecnico")).toBe(false);
+  });
+});
+
+describe("canRenameCalendar", () => {
+  it("allows admin and calidad (supervisor)", () => {
+    expect(canRenameCalendar("admin")).toBe(true);
+    expect(canRenameCalendar("calidad")).toBe(true);
+    expect(canRenameCalendar("tecnico")).toBe(false);
+    expect(canRenameCalendar(undefined)).toBe(false);
+  });
+});
+
+describe("canManageCalendarEvents", () => {
+  it("allows admin only", () => {
+    expect(canManageCalendarEvents("admin")).toBe(true);
+    expect(canManageCalendarEvents("calidad")).toBe(false);
+    expect(canManageCalendarEvents("tecnico")).toBe(false);
   });
 });
 

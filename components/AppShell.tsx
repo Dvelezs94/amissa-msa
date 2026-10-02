@@ -170,6 +170,11 @@ export function AppShell({
        type: "Operaciones",
        items: [
         {
+         href: "/calendario",
+         label: "Calendario",
+         icon: CalendarDays,
+        } satisfies NavItem,
+        {
          href: "/tareas",
          label: "Tareas",
          icon: ClipboardList,

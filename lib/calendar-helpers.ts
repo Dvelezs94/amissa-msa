@@ -17,6 +17,19 @@ export function isDefaultCalendarId(id: string): boolean {
 }
 
 /**
+ * Every calendar, including the built-in default, can change its display name.
+ * Identity stays on {@link DEFAULT_CALENDAR_ID}.
+ */
+export function calendarNameCanChange(id: string): boolean {
+  return id.length > 0;
+}
+
+/** The built-in default calendar cannot be deleted. */
+export function calendarCanBeDeleted(id: string): boolean {
+  return !isDefaultCalendarId(id);
+}
+
+/**
  * Calendar to assign when creating/updating a schedule without an explicit one.
  * Prefers the built-in default id when present in the list; otherwise first sorted calendar.
  */

@@ -26,3 +26,13 @@ export function canEditLockedWorkOrderChecklist(role: UserRole): boolean {
 export function canDeleteWorkOrder(role: UserRole | undefined): boolean {
   return role === "admin";
 }
+
+/** Admins and calidad (legacy supervisor) may rename calendars. */
+export function canRenameCalendar(role: UserRole | undefined): boolean {
+  return role === "admin" || role === "calidad";
+}
+
+/** Creating, editing, and deleting calendar events stays admin-only. */
+export function canManageCalendarEvents(role: UserRole | undefined): boolean {
+  return role === "admin";
+}

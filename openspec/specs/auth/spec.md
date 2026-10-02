@@ -40,7 +40,7 @@ Middleware SHALL restringir al rol `tecnico` a rutas específicas y una lista bl
 - **THEN** es redirigido a `/tareas`
 
 ### Requirement: Acceso calidad restringido
-Rol `calidad` SHALL acceder solo a checklists/revisiones, tareas, equipo, búsqueda y documentación.
+Rol `calidad` SHALL acceder solo a checklists/revisiones, tareas, calendario (puede renombrar calendarios), equipo, búsqueda y documentación.
 
 #### Scenario: Calidad accede a checklists
 - **GIVEN** un usuario con rol `calidad`

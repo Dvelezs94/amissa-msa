@@ -275,6 +275,7 @@ export function CalendarMonthView({
   onBusyChange,
   focusSchedule = null,
   focusDateYmd = null,
+  canManageEvents = true,
 }: {
   schedules: CalendarSchedulePayload[];
   assets: { id: string; name: string; sublabel?: string }[];
@@ -285,6 +286,7 @@ export function CalendarMonthView({
   onBusyChange?: (busy: boolean) => void;
   focusSchedule?: CalendarSchedulePayload | null;
   focusDateYmd?: string | null;
+  canManageEvents?: boolean;
 }) {
   const router = useRouter();
   const { colors: statusColors } = useWorkOrderStatusColors();
@@ -1143,18 +1145,19 @@ export function CalendarMonthView({
                   onClick={() => {
                     const ymd = toYmdLocal(cell.date);
                     setCurrentDate(new Date(cell.date));
+                    if (!canManageEvents) return;
                     setCreateModalDate(ymd);
                     setCreateModalOpen(true);
                   }}
                   title={
-                    cell.events.length === 0
+                    canManageEvents && cell.events.length === 0
                       ? "Click para crear un evento en este día"
                       : undefined
                   }
                   className={`min-h-[108px] border-r border-b border-zinc-200 px-2 py-1 text-left align-top transition-colors ${
                     cell.inMonth ? "bg-surface" : "bg-zinc-50/50"
                   } ${
-                    cell.events.length === 0
+                    canManageEvents && cell.events.length === 0
                       ? "cursor-pointer hover:bg-primary-50/50 hover:ring-1 hover:ring-inset hover:ring-primary-300"
                       : ""
                   } ${cell.isToday ? "ring-1 ring-inset ring-accent-500" : ""}`}
@@ -1374,7 +1377,7 @@ export function CalendarMonthView({
                   >
                     <CircleX className="h-4 w-4 pointer-events-none" aria-hidden />
                   </button>
-                ) : (
+                ) : canManageEvents ? (
                   <button
                     type="button"
                     aria-label="Editar nombre, frecuencia y checklist"
@@ -1387,7 +1390,7 @@ export function CalendarMonthView({
                   >
                     <Pencil className="h-4 w-4" aria-hidden />
                   </button>
-                )}
+                ) : null}
               </div>
               <button
                 type="button"
@@ -1685,6 +1688,7 @@ export function CalendarMonthView({
                   {loadingMoreLinkedWorkOrders ? "Cargando…" : "Cargar más"}
                 </button>
               ) : null}
+              {canManageEvents ? (
               <div className="mt-3 flex w-full flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
@@ -1721,6 +1725,7 @@ export function CalendarMonthView({
                   <Trash2 className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </button>
               </div>
+              ) : null}
               {assigneePromptOpen ? (
                 <div className="mt-2 min-h-0 overflow-hidden rounded-sm border border-zinc-300 bg-zinc-50 p-2">
                 <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-600">

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
+import { canRenameCalendar } from "@/lib/auth-shared";
 import { db } from "@/lib/db";
 import { calendars, maintenanceSchedules } from "@/lib/db/schema";
 import {
-  DEFAULT_CALENDAR_NAME,
-  isDefaultCalendarId,
+  calendarCanBeDeleted,
+  calendarNameCanChange,
 } from "@/lib/calendar-helpers";
 import { ensureDefaultCalendar } from "@/lib/ensure-default-calendar";
 
@@ -17,9 +18,6 @@ export async function PATCH(
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
   const { id } = await params;
   const row = await db.query.calendars.findFirst({
     where: eq(calendars.id, id),
@@ -28,19 +26,26 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const body = await req.json().catch(() => ({}));
+  const wantsName = body.name !== undefined;
+  const wantsOrder = body.sortOrder !== undefined;
+  if (session.role !== "admin") {
+    if (!canRenameCalendar(session.role) || !wantsName || wantsOrder) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
   const updates: {
     name?: string;
     sortOrder?: number;
   } = {};
 
   if (body.name !== undefined) {
-    const nextName = String(body.name).trim();
-    if (isDefaultCalendarId(id) && nextName !== DEFAULT_CALENDAR_NAME) {
+    if (!calendarNameCanChange(id)) {
       return NextResponse.json(
-        { error: "No se puede renombrar el calendario Mantenimiento" },
+        { error: "No se puede renombrar este calendario" },
         { status: 400 }
       );
     }
+    const nextName = String(body.name).trim();
     if (nextName && nextName !== row.name) updates.name = nextName;
   }
   if (body.sortOrder !== undefined && typeof body.sortOrder === "number") {
@@ -65,9 +70,9 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
-  if (isDefaultCalendarId(id)) {
+  if (!calendarCanBeDeleted(id)) {
     return NextResponse.json(
-      { error: "No se puede eliminar el calendario Mantenimiento" },
+      { error: "No se puede eliminar el calendario principal" },
       { status: 400 }
     );
   }

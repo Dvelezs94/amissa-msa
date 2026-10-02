@@ -126,9 +126,11 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
         <>
           <p>
             El calendario agrupa eventos de mantenimiento preventivo. Puedes
-            tener varios calendarios (por área o equipo); el predeterminado se
-            llama <strong>Mantenimiento</strong>. La vista se refresca sola cada
-            minuto si no tienes un diálogo abierto.
+            tener varios calendarios (por área o equipo). El predeterminado nace
+            como <strong>Mantenimiento</strong>. Un administrador o un
+            supervisor (rol Calidad) puede cambiarle el nombre; no se puede
+            eliminar. La vista se refresca sola
+            cada minuto si no tienes un diálogo abierto.
           </p>
           <DocsCalendarMock />
           <h3 className="mt-4 text-base font-semibold text-zinc-900">
