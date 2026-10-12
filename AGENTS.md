@@ -92,7 +92,7 @@ Root `package.json` is for the **Next.js** app only. The mobile app has its **ow
  - CI mobile path gate (skip APK when unchanged): `lib/ci-mobile-paths.ts`
   - Product docs catalog (`/documentacion`): `lib/docs-guide.ts`
   - Seed helpers (fechas relativas / anidación de checklist): `lib/seed-helpers.ts`
-  - Dashboard presets / public solicitud note URLs / file paths / public folio-or-email lookup: `lib/dashboard-quick-presets.ts`, `lib/solicitud-public-note-urls.ts`, `lib/file-storage.ts`, `lib/public-order-lookup.ts`
+  - Dashboard presets / public solicitud note URLs / file paths / public folio-or-email lookup: `lib/dashboard-quick-presets.ts`, `lib/solicitud-public-note-urls.ts`, `lib/file-storage.ts`, `lib/public-order-lookup.ts`, `lib/public-order-timeline.ts` (consulta pública: actividad ordenada)
   - Dashboard presentation (KPI catalog, empty states, context banner): `lib/dashboard-presentation.ts`
   - Dashboard checklists del día (prioridad NO OK / notas): `lib/dashboard-checklists.ts`
   - Work-order completion notifications: `lib/work-order-completion-notifications.ts`
