@@ -8,7 +8,22 @@ describe("parsePublicOrderLookup", () => {
   it("accepts a folio", () => {
     expect(parsePublicOrderLookup(" 2009 ")).toEqual({
       ok: true,
-      value: { kind: "folio", folio: 2009 },
+      value: { kind: "folio", folio: "2009" },
+    });
+  });
+
+  it("accepts OT and RU folios in any case", () => {
+    expect(parsePublicOrderLookup("ot12")).toEqual({
+      ok: true,
+      value: { kind: "folio", folio: "OT-12" },
+    });
+    expect(parsePublicOrderLookup("ru-4000")).toEqual({
+      ok: true,
+      value: { kind: "folio", folio: "RU-4000" },
+    });
+    expect(parsePublicOrderLookup("RU4000")).toEqual({
+      ok: true,
+      value: { kind: "folio", folio: "RU-4000" },
     });
   });
 

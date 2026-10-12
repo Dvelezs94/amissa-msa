@@ -98,7 +98,7 @@ export function workflowTriggerLabel(type: WorkflowTriggerType): string {
     case "work_order.note_added":
       return "Nueva nota en tarea";
     case "solicitud.created":
-      return "Solicitud pública creada";
+      return "Orden de trabajo creada";
     case "checklist_revision.proposed":
       return "Revisión de checklist propuesta";
     case "checklist_revision.approved":
@@ -151,7 +151,7 @@ export function workflowRecipientLabel(kind: WorkflowRecipientKind): string {
     case "role":
       return "Todos los de un rol";
     case "contact":
-      return "Contacto del evento (solicitud)";
+      return "Contacto del evento (orden de trabajo)";
   }
 }
 

@@ -134,7 +134,7 @@ export function resolveAppShellTitle(pathname: string): string | null {
   const rules: { prefix: string; title: string }[] = [
     { prefix: "/dashboard", title: "Dashboard" },
     { prefix: "/calendario", title: "Calendario" },
-    { prefix: "/tareas/new", title: "Nueva tarea" },
+    { prefix: "/tareas/new", title: "Nueva orden de trabajo" },
     { prefix: "/tareas", title: "Tareas" },
     { prefix: "/checklists/new", title: "Nueva plantilla" },
     { prefix: "/checklists", title: "Checklist" },

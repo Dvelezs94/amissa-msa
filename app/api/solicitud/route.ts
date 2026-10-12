@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { assets, attachments, notes, users, workOrders } from "@/lib/db/schema";
 import { createId } from "@/lib/id";
 import { recordAuditLog } from "@/lib/audit";
-import { getNextWorkOrderFolio } from "@/lib/work-order-folio";
+import { getNextWorkOrderFolio, workOrderFolioEquals } from "@/lib/work-order-folio";
 import { publicWebWorkOrderFilter } from "@/lib/public-web-work-order-filter";
 import {
   parsePublicOrderLookup,
@@ -74,8 +74,16 @@ export async function GET(req: Request) {
   if (!raw) {
     return NextResponse.json({ error: "Indica el folio de la orden." }, { status: 400 });
   }
-  const folio = Number(raw);
-  if (!Number.isInteger(folio) || folio < 1) {
+  const parsedFolio = parsePublicOrderLookup(raw);
+  if (!parsedFolio.ok || parsedFolio.value.kind !== "folio") {
+    return NextResponse.json(
+      { error: parsedFolio.ok ? "Folio no valido." : parsedFolio.error },
+      { status: 400 }
+    );
+  }
+  const folio = parsedFolio.value.folio;
+  const folioMatch = workOrderFolioEquals(folio);
+  if (!folioMatch) {
     return NextResponse.json({ error: "Folio no valido." }, { status: 400 });
   }
 
@@ -96,7 +104,7 @@ export async function GET(req: Request) {
     })
     .from(workOrders)
     .leftJoin(assets, eq(workOrders.assetId, assets.id))
-    .where(and(eq(workOrders.folio, folio), publicWebWorkOrderFilter))
+    .where(and(folioMatch, publicWebWorkOrderFilter))
     .limit(1);
 
   if (!wo) {
@@ -203,7 +211,7 @@ export async function POST(req: Request) {
     .join("\n");
 
   const id = createId();
-  const folio = await getNextWorkOrderFolio();
+  const folio = await getNextWorkOrderFolio("on_demand");
   const now = new Date();
   const finalDescription = detalleContacto
     ? `${descripcion}\n\n---\nOrden publica desde /orden\n${detalleContacto}`

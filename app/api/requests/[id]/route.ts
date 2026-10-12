@@ -68,7 +68,7 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   if (body.action === "convert") {
     const woId = createId();
-    const folio = await getNextWorkOrderFolio();
+    const folio = await getNextWorkOrderFolio("on_demand");
     const now = new Date();
     await db.insert(workOrders).values({
       id: woId,

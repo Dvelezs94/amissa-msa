@@ -5,7 +5,7 @@
  */
 import { execSync } from "node:child_process";
 import bcrypt from "bcryptjs";
-import { count, eq, sql } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import {
   buildChecklistRevisionReviewRequestBody,
   CHECKLIST_REVISION_REVIEW_TITLE,
@@ -23,7 +23,7 @@ import {
   dateFromYmdAtHour,
   seedChecklistItemCompleted,
 } from "../lib/seed-helpers";
-import { computeNextWorkOrderFolio } from "../lib/work-order-folio-helpers";
+import { nextPrefixedFolio } from "../lib/work-order-folio-helpers";
 import { ymdInTimeZone } from "../lib/work-order-start-date";
 import {
   assetGroupSeed,
@@ -334,10 +334,18 @@ async function main() {
       stats.schedulesInserted += 1;
     }
 
-    const [folioRow] = await tx
-      .select({ max: sql<number>`max(${schema.workOrders.folio})` })
+    const existingFolios = await tx
+      .select({
+        folio: schema.workOrders.folio,
+        kind: schema.workOrders.kind,
+      })
       .from(schema.workOrders);
-    let nextFolio = computeNextWorkOrderFolio(folioRow?.max ?? 0);
+    const otFolios: (string | null)[] = [];
+    const ruFolios: (string | null)[] = [];
+    for (const row of existingFolios) {
+      if (row.kind === "routine") ruFolios.push(row.folio);
+      else otFolios.push(row.folio);
+    }
     const workOrderIdByTitle = new Map<string, string>();
     let boardSort = 0;
 
@@ -395,9 +403,13 @@ async function main() {
         : workOrder.description;
 
       const workOrderId = rid("wo");
+      const folio =
+        workOrder.kind === "routine"
+          ? nextPrefixedFolio(ruFolios, "RU")
+          : nextPrefixedFolio(otFolios, "OT");
       await tx.insert(schema.workOrders).values({
         id: workOrderId,
-        folio: nextFolio,
+        folio,
         title: workOrder.title,
         description,
         status: workOrder.status,
@@ -418,7 +430,8 @@ async function main() {
         countsMachineDowntime: workOrder.countsMachineDowntime ?? false,
         manualDowntimeMinutes: workOrder.manualDowntimeMinutes ?? 0,
       });
-      nextFolio += 1;
+      if (workOrder.kind === "routine") ruFolios.push(folio);
+      else otFolios.push(folio);
       boardSort += 1;
       workOrderIdByTitle.set(workOrder.title, workOrderId);
       stats.workOrdersInserted += 1;

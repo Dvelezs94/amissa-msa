@@ -26,6 +26,8 @@ import {
   type GlobalSearchHit,
   type GlobalSearchKind,
 } from "@/lib/global-search";
+import { formatWorkOrderFolioDisplay } from "@/lib/work-order-folio-helpers";
+import { workOrderFolioEquals } from "@/lib/work-order-folio";
 
 export async function GET(req: Request) {
   const session = await getSession();
@@ -87,12 +89,13 @@ async function searchWorkOrders(
   limit: number
 ): Promise<GlobalSearchHit[]> {
   const folio = parseSearchFolio(query);
+  const folioMatch = folio ? workOrderFolioEquals(folio) : null;
   const match = or(
     ilike(workOrders.title, pattern),
     ilike(workOrders.description, pattern),
     ilike(assets.name, pattern),
     ilike(assets.assetId, pattern),
-    ...(folio != null ? [eq(workOrders.folio, folio)] : [])
+    ...(folioMatch ? [folioMatch] : [])
   );
   const rows = await db
     .select({
@@ -112,7 +115,7 @@ async function searchWorkOrders(
     hit(
       "work_order",
       r.id,
-      r.folio != null ? `#${r.folio} · ${r.title}` : r.title,
+      r.folio != null ? `${formatWorkOrderFolioDisplay(String(r.folio))} · ${r.title}` : r.title,
       r.assetName
         ? `${r.assetName}${r.assetCode ? ` (${r.assetCode})` : ""}`
         : "Sin máquina"

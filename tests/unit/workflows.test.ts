@@ -10,6 +10,8 @@ import {
   workflowMatchesEvent,
   workflowTemplateVarsFromEvent,
   workflowTriggerLabel,
+  workflowRecipientLabel,
+  WORKFLOW_TRIGGER_TYPES,
   buildWorkflowEvent,
 } from "@/lib/workflows";
 
@@ -20,6 +22,13 @@ describe("workflowTriggerLabel", () => {
     );
     expect(workflowTriggerLabel("work_order.note_added")).toBe(
       "Nueva nota en tarea"
+    );
+    expect(workflowTriggerLabel("solicitud.created")).toBe(
+      "Orden de trabajo creada"
+    );
+    expect(WORKFLOW_TRIGGER_TYPES).toContain("solicitud.created");
+    expect(workflowRecipientLabel("contact")).toBe(
+      "Contacto del evento (orden de trabajo)"
     );
   });
 });

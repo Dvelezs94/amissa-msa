@@ -9,7 +9,7 @@ export default function OrdenPublicaPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [successFolio, setSuccessFolio] = useState<number | null>(null);
+  const [successFolio, setSuccessFolio] = useState<string | null>(null);
   const [assets, setAssets] = useState<PublicAsset[]>([]);
   const [assetsLoading, setAssetsLoading] = useState(true);
 
@@ -59,9 +59,8 @@ export default function OrdenPublicaPage() {
           data.folio != null ? data.folio : data.workOrderId
         }`
       );
-      if (data.folio != null) {
-        const n = Number(data.folio);
-        if (Number.isInteger(n) && n >= 1) setSuccessFolio(n);
+      if (data.folio != null && String(data.folio).trim() !== "") {
+        setSuccessFolio(String(data.folio));
       }
       form.reset();
     } catch {
@@ -75,7 +74,7 @@ export default function OrdenPublicaPage() {
     <div className="min-h-screen bg-surface p-6">
       <div className="mx-auto max-w-lg space-y-5">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-zinc-900">Crear orden de mantenimiento</h1>
+          <h1 className="text-2xl font-semibold text-zinc-900">Crear orden de trabajo</h1>
           <p className="text-sm text-zinc-600">
             Reporta una falla o necesidad de mantenimiento. Se generara una orden abierta para
             atencion del equipo.
@@ -94,7 +93,7 @@ export default function OrdenPublicaPage() {
               {successFolio != null ? (
                 <p>
                   <Link
-                    href={`/orden/consultar?folio=${successFolio}`}
+                    href={`/orden/consultar?folio=${encodeURIComponent(successFolio)}`}
                     className="font-semibold text-primary-700 underline tap-target"
                   >
                     Ver estado publico de esta orden

@@ -33,7 +33,7 @@ export async function getPublicUserProfile(userId: string) {
 
 export type UserProfileWorkOrderRow = {
   id: string;
-  folio: number | null;
+  folio: string | null;
   title: string;
   status: string;
   priority: string;

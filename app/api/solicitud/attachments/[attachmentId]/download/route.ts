@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { attachments, workOrders } from "@/lib/db/schema";
 import { publicWebWorkOrderFilter } from "@/lib/public-web-work-order-filter";
+import { workOrderFolioEquals } from "@/lib/work-order-folio";
+import { parseWorkOrderFolioInput } from "@/lib/work-order-folio-helpers";
 import { presignS3PublicUrl } from "@/lib/s3-storage";
 
 export const dynamic = "force-dynamic";
@@ -17,8 +19,9 @@ export async function GET(
 ) {
   const url = new URL(req.url);
   const folioRaw = url.searchParams.get("folio")?.trim() ?? "";
-  const folio = Number(folioRaw);
-  if (!Number.isInteger(folio) || folio < 1) {
+  const parsedFolio = parseWorkOrderFolioInput(folioRaw);
+  const folioMatch = parsedFolio ? workOrderFolioEquals(parsedFolio.canonical) : null;
+  if (!folioMatch) {
     return NextResponse.json({ error: "Folio no valido." }, { status: 400 });
   }
 
@@ -32,7 +35,7 @@ export async function GET(
     .from(attachments)
     .innerJoin(workOrders, eq(attachments.workOrderId, workOrders.id))
     .where(
-      and(eq(attachments.id, attachmentId), eq(workOrders.folio, folio), publicWebWorkOrderFilter)
+      and(eq(attachments.id, attachmentId), folioMatch, publicWebWorkOrderFilter)
     )
     .limit(1);
 

@@ -94,7 +94,7 @@ export async function POST(
   const assigneeId = assigneeIds[0]!;
 
   const workOrderId = createId();
-  const folio = await getNextWorkOrderFolio();
+  const folio = await getNextWorkOrderFolio("routine");
   const now = new Date();
 
   await db.insert(workOrders).values({

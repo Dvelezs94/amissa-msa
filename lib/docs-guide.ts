@@ -64,8 +64,8 @@ export const DOCS_SECTIONS: DocsSectionMeta[] = [
   },
   {
     slug: "solicitudes",
-    title: "Solicitudes públicas",
-    summary: "Formulario /orden, folio y conversión a tarea.",
+    title: "Orden de trabajo",
+    summary: "Formulario /orden, folio OT y consulta.",
     audience: ["admin"],
   },
   {
@@ -107,7 +107,7 @@ export const DOCS_ROLE_ACCESS: DocsRoleAccessRow[] = [
   { feature: "Usuarios e invitaciones", admin: true, tecnico: false, calidad: false },
   { feature: "Base de conocimiento", admin: true, tecnico: true, calidad: false },
   { feature: "App móvil (tareas del día)", admin: true, tecnico: true, calidad: false },
-  { feature: "Solicitud pública (/orden)", admin: true, tecnico: false, calidad: false },
+  { feature: "Orden de trabajo (/orden)", admin: true, tecnico: false, calidad: false },
   { feature: "Búsqueda global", admin: true, tecnico: true, calidad: true },
 ];
 

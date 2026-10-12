@@ -39,9 +39,11 @@ describe("sqlIlikePattern", () => {
 
 describe("parseSearchFolio", () => {
   it("parses folio phrases", () => {
-    expect(parseSearchFolio("2005")).toBe(2005);
-    expect(parseSearchFolio("#2005")).toBe(2005);
-    expect(parseSearchFolio("folio 2005")).toBe(2005);
+    expect(parseSearchFolio("2005")).toBe("2005");
+    expect(parseSearchFolio("#2005")).toBe("2005");
+    expect(parseSearchFolio("folio 2005")).toBe("2005");
+    expect(parseSearchFolio("ot12")).toBe("OT-12");
+    expect(parseSearchFolio("ru-4000")).toBe("RU-4000");
     expect(parseSearchFolio("horno")).toBeNull();
   });
 });

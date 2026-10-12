@@ -44,7 +44,7 @@ export default async function FlujosPage() {
       />
       <p className="max-w-xl text-sm text-zinc-500">
         Automatiza avisos cuando pasa algo en MSA: una tarea se completa, hay
-        una nota nueva, llega una solicitud pública o Calidad revisa un
+        una nota nueva, llega una orden de trabajo o Calidad revisa un
         checklist.
       </p>
       <WorkflowList

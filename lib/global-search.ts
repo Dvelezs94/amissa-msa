@@ -1,4 +1,5 @@
 import type { UserRole } from "@/lib/auth-shared";
+import { parseWorkOrderFolioInput } from "@/lib/work-order-folio-helpers";
 
 export const GLOBAL_SEARCH_KINDS = [
   "work_order",
@@ -59,14 +60,12 @@ export function sqlIlikePattern(query: string): string | null {
   return `%${safe}%`;
 }
 
-export function parseSearchFolio(query: string): number | null {
+export function parseSearchFolio(query: string): string | null {
   const folioPhrase = query
     .replace(/^folio\s*#?\s*/i, "")
     .replace(/^#\s*/, "")
     .trim();
-  if (!/^\d+$/.test(folioPhrase)) return null;
-  const n = Number(folioPhrase);
-  return Number.isFinite(n) ? n : null;
+  return parseWorkOrderFolioInput(folioPhrase)?.canonical ?? null;
 }
 
 export function globalSearchKindsForRole(role: UserRole): GlobalSearchKind[] {

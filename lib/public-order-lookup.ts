@@ -1,5 +1,7 @@
+import { parseWorkOrderFolioInput } from "@/lib/work-order-folio-helpers";
+
 export type PublicOrderLookup =
-  | { kind: "folio"; folio: number }
+  | { kind: "folio"; folio: string }
   | { kind: "email"; email: string };
 
 const CONTACT_EMAIL =
@@ -20,11 +22,11 @@ export function parsePublicOrderLookup(
     }
     return { ok: true, value: { kind: "email", email } };
   }
-  const folio = Number(trimmed);
-  if (!Number.isInteger(folio) || folio < 1) {
+  const parsed = parseWorkOrderFolioInput(trimmed);
+  if (!parsed) {
     return { ok: false, error: "Folio no válido." };
   }
-  return { ok: true, value: { kind: "folio", folio } };
+  return { ok: true, value: { kind: "folio", folio: parsed.canonical } };
 }
 
 /**

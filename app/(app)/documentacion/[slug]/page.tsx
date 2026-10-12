@@ -205,19 +205,19 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
       return (
         <>
           <p>
-            Cualquiera puede levantar una solicitud pública en{" "}
+            Cualquiera puede levantar una orden de trabajo en{" "}
             <code className="rounded bg-zinc-100 px-1 text-xs">/orden</code>{" "}
             (sin iniciar sesión) y consultar el folio, o el email de contacto, en{" "}
             <code className="rounded bg-zinc-100 px-1 text-xs">/orden/consultar</code>.
-            El equipo de mantenimiento la ve en Solicitudes y puede convertirla
-            en tarea.
+            Quien ya inició sesión también puede crearla desde Tareas. El folio
+            nuevo tiene la forma OT-n.
           </p>
           <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase text-zinc-500">
               Ejemplo · folio de muestra
             </p>
             <p className="mt-2 font-mono text-2xl font-semibold text-primary-700">
-              MSA-2026-0042
+              OT-12
             </p>
             <p className="mt-1 text-sm text-zinc-600">
               Estado: Recibida · Máquina: Horno HT-01 · «Ruido anormal en
@@ -232,7 +232,7 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
           <p>
             Los <strong>flujos</strong> (solo admin) automatizan avisos cuando
             pasa algo: tarea creada/completada/asignada, cambio de estatus,
-            nota, solicitud pública o revisión de checklist. Las acciones son
+            nota, orden de trabajo o revisión de checklist. Las acciones son
             notificación en la app o correo (SMTP / Gmail).
           </p>
           <DocsWorkflowCanvasMock />

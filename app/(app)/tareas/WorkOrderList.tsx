@@ -31,6 +31,7 @@ import {
   type WorkOrderFilterUser,
 } from "./WorkOrderFiltersDialog";
 import { APP_TIME_ZONE } from "@/lib/timezone";
+import { parseWorkOrderFolioInput, workOrderFoliosMatch } from "@/lib/work-order-folio-helpers";
 import {
   formatWorkOrderElapsedCompact,
   formatWorkOrderElapsedLabel,
@@ -39,7 +40,7 @@ import {
 
 type WorkOrderRow = {
   id: string;
-  folio: number | null;
+  folio: string | number | null;
   title: string;
   status: string;
   priority: string;
@@ -238,7 +239,7 @@ export function WorkOrderList({
           href="/tareas/new"
           className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white tap-target hover:bg-primary-700"
         >
-          Nueva tarea
+          Nueva orden de trabajo
         </Link>
       </>
     ),
@@ -308,9 +309,13 @@ export function WorkOrderList({
     );
     if (!q) return byKind;
     const folioPhrase = q.replace(/^folio\s*#?\s*/i, "").replace(/^#\s*/, "").trim();
-    const isNumericFolio = /^\d+$/.test(folioPhrase);
+    const queryFolio = parseWorkOrderFolioInput(folioPhrase);
     return byKind.filter((wo) => {
-      if (isNumericFolio && wo.folio != null && String(wo.folio) === folioPhrase) {
+      if (
+        queryFolio &&
+        wo.folio != null &&
+        workOrderFoliosMatch(String(wo.folio), queryFolio.canonical)
+      ) {
         return true;
       }
       const k = parseWorkOrderKind(wo.kind);

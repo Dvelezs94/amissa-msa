@@ -15,6 +15,7 @@ import {
   workOrderKindBadgeClass,
   workOrderKindLabel,
 } from "@/lib/work-order-kind";
+import { formatWorkOrderFolioDisplay } from "@/lib/work-order-folio-helpers";
 import { SetPageHeader } from "@/components/SetPageHeader";
 
 function statusLabel(status: string): string {
@@ -171,7 +172,7 @@ export default async function EquipoUsuarioPage({
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-zinc-900">
                         {wo.folio != null ? (
-                          <span className="text-zinc-500">#{wo.folio} · </span>
+                          <span className="text-zinc-500">{formatWorkOrderFolioDisplay(String(wo.folio))} · </span>
                         ) : null}
                         {wo.title}
                       </p>

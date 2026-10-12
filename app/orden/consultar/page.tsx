@@ -15,7 +15,7 @@ type PublicComment = {
 };
 
 type EmailMatch = {
-  folio: number;
+  folio: string;
   title: string;
   status: string;
   createdAt: string | null;
@@ -24,7 +24,7 @@ type EmailMatch = {
 };
 
 type FolioLookupResult = {
-  folio: number;
+  folio: string;
   title: string;
   status: string;
   priority: string;
@@ -76,7 +76,7 @@ const KIND_LABEL: Record<string, string> = {
 
 function normalizeLookupPayload(raw: Record<string, unknown>): FolioLookupResult {
   return {
-    folio: Number(raw.folio),
+    folio: raw.folio == null ? "" : String(raw.folio),
     title: String(raw.title ?? ""),
     status: String(raw.status ?? ""),
     priority: String(raw.priority ?? ""),
@@ -201,7 +201,7 @@ function ConsultarOrdenForm() {
     }
   }
 
-  async function openEmailMatch(folio: number) {
+  async function openEmailMatch(folio: string) {
     setLookupError(null);
     setLookupResult(null);
     setLookupLoading(true);
@@ -217,7 +217,7 @@ function ConsultarOrdenForm() {
   return (
     <div className="mx-auto max-w-lg space-y-5">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-zinc-900">Consultar orden</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900">Consultar orden de trabajo</h1>
         <p className="text-sm text-zinc-600">
           Busca por folio. Si no lo recuerdas, usa el email de contacto con el que
           creaste la orden.
@@ -241,7 +241,7 @@ function ConsultarOrdenForm() {
               name="folioConsulta"
               type="text"
               autoComplete="off"
-              placeholder="Ej. 2009 o ana@correo.com"
+              placeholder="Ej. OT-12, 2009 o ana@correo.com"
               value={folioLookup}
               onChange={(e) => setFolioLookup(e.target.value)}
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"

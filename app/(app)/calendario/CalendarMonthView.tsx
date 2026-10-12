@@ -406,7 +406,7 @@ export function CalendarMonthView({
   const [linkedWorkOrders, setLinkedWorkOrders] = useState<
     {
       id: string;
-      folio: number | null;
+      folio: string | number | null;
       title: string;
       status: string;
       priority?: string | null;

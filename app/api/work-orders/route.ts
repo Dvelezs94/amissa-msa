@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Title required" }, { status: 400 });
   }
   const id = createId();
-  const folio = await getNextWorkOrderFolio();
+  const folio = await getNextWorkOrderFolio("on_demand");
   const now = new Date();
   const checklistTemplateId = body.checklistTemplateId || null;
   const assetId =

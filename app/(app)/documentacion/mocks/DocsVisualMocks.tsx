@@ -6,22 +6,22 @@ export function DocsKanbanMock() {
       title: "Pendiente",
       color: "bg-amber-100 text-amber-900",
       cards: [
-        { folio: "2041", title: "Cambio de filtro HT-01", kind: "Rutinaria" },
-        { folio: "2042", title: "Fuga en línea de vapor", kind: "Demanda" },
+        { folio: "RU-4000", title: "Cambio de filtro HT-01", kind: "Rutinaria" },
+        { folio: "OT-1", title: "Fuga en línea de vapor", kind: "Orden de trabajo" },
       ],
     },
     {
       title: "En curso",
       color: "bg-sky-100 text-sky-900",
       cards: [
-        { folio: "2038", title: "Lubricación prensa 3", kind: "Rutinaria" },
+        { folio: "RU-4001", title: "Lubricación prensa 3", kind: "Rutinaria" },
       ],
     },
     {
       title: "Completada",
       color: "bg-emerald-100 text-emerald-900",
       cards: [
-        { folio: "2035", title: "Inspección semanal horno", kind: "Rutinaria" },
+        { folio: "RU-4002", title: "Inspección semanal horno", kind: "Rutinaria" },
       ],
     },
   ];

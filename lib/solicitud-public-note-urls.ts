@@ -2,14 +2,14 @@
 const ATTACHMENT_TOKEN_REGEX = /\[\[file:([^|\]]+)\|([^\]]+)\]\]/g;
 const ATTACHMENT_TOKEN_WITH_ID_REGEX = /\[\[fileid:([^|\]]+)\|([^\]]+)\]\]/g;
 
-export function publicAttachmentDownloadPath(attachmentId: string, folio: number): string {
+export function publicAttachmentDownloadPath(attachmentId: string, folio: string | number): string {
   const qs = `folio=${encodeURIComponent(String(folio))}`;
   return `/api/solicitud/attachments/${encodeURIComponent(attachmentId)}/download?${qs}`;
 }
 
 export function buildPublicAttachmentUrlMaps(
   rows: { id: string; fileUrl: string }[],
-  folio: number
+  folio: string | number
 ): { byId: Map<string, string>; byUrl: Map<string, string> } {
   const byId = new Map(
     rows.map((r) => [r.id, publicAttachmentDownloadPath(r.id, folio)])
@@ -23,7 +23,7 @@ export function buildPublicAttachmentUrlMaps(
 /** Rewrite `[[fileid:...]]` / `[[file:...]]` to public `/api/solicitud/attachments/...` URLs. */
 export function rewriteNoteBodyToPublicDownloadUrls(
   body: string,
-  folio: number,
+  folio: string | number,
   byId: Map<string, string>,
   byUrl: Map<string, string>
 ): string {

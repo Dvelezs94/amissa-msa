@@ -79,7 +79,8 @@ export const workOrders = pgTable(
   "work_orders",
   {
     id: text("id").primaryKey(),
-    folio: integer("folio"),
+    /** Texto: `OT-n`, `RU-n` o un número legado. No se reescriben filas viejas. */
+    folio: text("folio"),
     title: text("title").notNull(),
     description: text("description"),
     status: text("status", {

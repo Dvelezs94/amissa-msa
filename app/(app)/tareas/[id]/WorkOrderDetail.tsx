@@ -146,7 +146,7 @@ export function WorkOrderDetail({
 }: {
   initial: {
     id: string;
-    folio?: number | null;
+    folio?: string | number | null;
     title: string;
     description: string | null;
     status: string;
