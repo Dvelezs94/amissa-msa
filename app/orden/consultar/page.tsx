@@ -400,7 +400,7 @@ function ConsultarOrdenForm() {
                   />
                   <SummaryItem
                     label="Prioridad"
-                    value={PRIORITY_LABEL[lookupResult.priority] ?? lookupResult.priority || "—"}
+                    value={(PRIORITY_LABEL[lookupResult.priority] ?? lookupResult.priority) || "—"}
                   />
                   <SummaryItem label="Registrada" value={formatPublicDate(lookupResult.createdAt)} />
                   <SummaryItem label="Compromiso" value={formatPublicDate(lookupResult.dueDate)} />
