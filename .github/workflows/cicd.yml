@@ -123,6 +123,9 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # Default includes the removed SDK package "tools", which sdkmanager rejects.
+          packages: platform-tools
 
       - name: Install mobile dependencies
         run: npm ci
