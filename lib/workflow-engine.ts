@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { users, workflowDefinitions, workflowRuns } from "@/lib/db/schema";
 import { createId } from "@/lib/id";
 import { sendWorkflowEmail } from "@/lib/workflow-email";
+import { sendWorkflowTelegram } from "@/lib/workflow-telegram";
+import { workflowTelegramText } from "@/lib/telegram-config";
 import {
   coerceStoredTriggerConfig,
   coerceStoredWorkflowActions,
@@ -90,6 +92,14 @@ export async function runWorkflowAction(
   const vars = workflowTemplateVarsFromEvent(event);
   const title = interpolateWorkflowTemplate(action.title, vars).trim();
   const body = interpolateWorkflowTemplate(action.body, vars).trim();
+
+  if (action.type === "telegram") {
+    return sendWorkflowTelegram({
+      chatId: action.telegramChatId,
+      text: workflowTelegramText(title, body),
+    });
+  }
+
   const { userIds, emails } = await resolveActionTargets(action, event);
 
   if (action.type === "notify") {

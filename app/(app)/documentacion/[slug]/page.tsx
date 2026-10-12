@@ -233,13 +233,14 @@ function SectionBody({ slug }: { slug: DocsSectionSlug }) {
             Los <strong>flujos</strong> (solo admin) automatizan avisos cuando
             pasa algo: tarea creada/completada/asignada, cambio de estatus,
             nota, orden de trabajo o revisión de checklist. Las acciones son
-            notificación en la app o correo (SMTP / Gmail).
+            notificación en la app, correo (SMTP / Gmail) o Telegram.
           </p>
           <DocsWorkflowCanvasMock />
           <DocsCallout title="Probar">
             En cada acción del asistente hay un botón <strong>Probar</strong>:
-            te manda el aviso o correo a ti con datos de ejemplo, sin registrar
-            una corrida del flujo.
+            el aviso o el correo te llegan a ti. Telegram se manda al chat
+            configurado. En ambos casos usa datos de ejemplo y no registra una
+            corrida del flujo.
           </DocsCallout>
         </>
       );

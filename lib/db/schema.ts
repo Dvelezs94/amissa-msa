@@ -508,7 +508,7 @@ export const assetHourMaintenancePlans = pgTable(
   ]
 );
 
-/** Admin-defined automations: event trigger + actions (notify / email). */
+/** Admin-defined automations: event trigger + actions (notify / email / telegram). */
 export const workflowDefinitions = pgTable(
   "workflow_definitions",
   {

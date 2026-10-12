@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { isSmtpConfigured } from "@/lib/smtp-config";
+import { isTelegramConfigured } from "@/lib/telegram-config";
 import { SetPageHeader } from "@/components/SetPageHeader";
 import { WorkflowForm } from "../WorkflowForm";
 
@@ -38,7 +39,11 @@ export default async function NewFlujoPage() {
           </Link>
         }
       />
-      <WorkflowForm users={userRows} smtpConfigured={isSmtpConfigured()} />
+      <WorkflowForm
+        users={userRows}
+        smtpConfigured={isSmtpConfigured()}
+        telegramConfigured={isTelegramConfigured()}
+      />
     </div>
   );
 }

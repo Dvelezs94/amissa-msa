@@ -124,6 +124,34 @@ describe("parseWorkflowDefinition", () => {
     ).toBe(false);
   });
 
+  it("accepts a telegram action and rejects a bad chat id", () => {
+    const ok = parseWorkflowDefinition({
+      name: "Aviso de planta",
+      triggerType: "work_order.completed",
+      actions: [
+        {
+          ...defaultWorkflowAction("telegram"),
+          telegramChatId: "@planta",
+        },
+      ],
+    });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.value.actions[0]?.telegramChatId).toBe("@planta");
+    }
+    const bad = parseWorkflowDefinition({
+      name: "Aviso de planta",
+      triggerType: "work_order.completed",
+      actions: [
+        {
+          ...defaultWorkflowAction("telegram"),
+          telegramChatId: "canal de la planta",
+        },
+      ],
+    });
+    expect(bad.ok).toBe(false);
+  });
+
   it("rejects empty actions", () => {
     expect(
       parseWorkflowDefinition({

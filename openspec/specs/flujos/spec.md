@@ -1,7 +1,7 @@
 # Flujos (Workflows)
 
 ## Purpose
-Automatización de acciones (notificaciones, emails) ante eventos del sistema. Solo admin.
+Automatización de acciones (notificaciones, emails, Telegram) ante eventos del sistema. Solo admin.
 
 ## Requirements
 
@@ -38,12 +38,18 @@ La etiqueta del destinatario de contacto de ese evento SHALL decir «orden de tr
 - **THEN** la respuesta es 403
 
 ### Requirement: Acciones de notificación y email
-Las acciones SHALL ser notificación in-app o email vía SMTP.
+Las acciones SHALL ser notificación in-app, email vía SMTP o mensaje de Telegram.
 
 #### Scenario: Acción de email
 - **GIVEN** un flujo con acción email configurada
 - **WHEN** se dispara el trigger
 - **THEN** se envía el email al destinatario con las variables resueltas
+
+#### Scenario: Acción de Telegram
+- **GIVEN** un flujo con acción Telegram y `TELEGRAM_BOT_TOKEN` en el servidor
+- **WHEN** se dispara el trigger
+- **THEN** se envía el título y el mensaje al chat de la acción, o a `TELEGRAM_CHAT_ID` si la acción no indica chat
+- **AND** el token del bot no se guarda en el flujo
 
 ### Requirement: Wizard de 3 pasos
 Crear/editar flujo SHALL usar wizard: Datos → Cuando → Entonces.
@@ -54,12 +60,18 @@ Crear/editar flujo SHALL usar wizard: Datos → Cuando → Entonces.
 - **THEN** el flujo queda activo
 
 ### Requirement: Probar acción
-Cada acción SHALL tener botón «Probar» que envía al usuario actual con datos de ejemplo.
+Cada acción SHALL tener botón «Probar». Notificación y email se envían al usuario actual; Telegram se envía al chat configurado. En todos los casos usa datos de ejemplo y no registra una corrida.
 
 #### Scenario: Probar notificación
 - **GIVEN** un admin editando un flujo
 - **WHEN** presiona «Probar» en una acción de notificación
 - **THEN** recibe una notificación in-app con variables de ejemplo
+
+#### Scenario: Probar Telegram
+- **GIVEN** un admin editando una acción Telegram con chat configurado
+- **WHEN** presiona «Probar»
+- **THEN** el mensaje de ejemplo se envía a ese chat
+- **AND** no se registra una corrida del flujo
 
 ### Requirement: Canvas de flujo
 El flujo guardado SHALL visualizarse como canvas read-only.

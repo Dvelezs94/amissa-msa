@@ -19,6 +19,7 @@ const CHIP: Record<string, string> = {
   trigger: "border-accent-200 bg-accent-50 text-accent-700",
   notify: "border-primary-200 bg-primary-50 text-primary-800",
   email: "border-teal-200 bg-teal-50 text-teal-800",
+  telegram: "border-sky-200 bg-sky-50 text-sky-800",
 };
 
 function MiniGraph({ item }: { item: WorkflowListItem }) {

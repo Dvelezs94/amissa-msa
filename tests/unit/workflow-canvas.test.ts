@@ -71,17 +71,27 @@ describe("summaries and mini graph", () => {
         title: "",
       })
     ).toBe("Calidad");
+    expect(
+      workflowActionSummary({
+        ...defaultWorkflowAction("telegram"),
+        telegramChatId: "-1009",
+      })
+    ).toBe("Telegram -1009");
+    expect(workflowActionSummary(defaultWorkflowAction("telegram"))).toBe(
+      "Canal de Telegram"
+    );
   });
 
   it("builds chips for the list preview", () => {
     const chips = workflowMiniGraphChips({
       triggerType: "work_order.created",
-      actions: [{ type: "notify" }, { type: "email" }],
+      actions: [{ type: "notify" }, { type: "email" }, { type: "telegram" }],
     });
     expect(chips.map((c) => c.label)).toEqual([
       "Tarea creada",
       "Notificación en la app",
       "Enviar email",
+      "Telegram",
     ]);
   });
 });

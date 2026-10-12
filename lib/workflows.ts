@@ -1,4 +1,5 @@
 import { AVAILABLE_USER_ROLES, type UserRole } from "@/lib/auth-shared";
+import { normalizeTelegramChatId } from "@/lib/telegram-config";
 
 export const WORKFLOW_TRIGGER_TYPES = [
   "work_order.created",
@@ -14,7 +15,7 @@ export const WORKFLOW_TRIGGER_TYPES = [
 
 export type WorkflowTriggerType = (typeof WORKFLOW_TRIGGER_TYPES)[number];
 
-export const WORKFLOW_ACTION_TYPES = ["notify", "email"] as const;
+export const WORKFLOW_ACTION_TYPES = ["notify", "email", "telegram"] as const;
 export type WorkflowActionType = (typeof WORKFLOW_ACTION_TYPES)[number];
 
 export const WORKFLOW_RECIPIENT_KINDS = [
@@ -48,6 +49,7 @@ export type WorkflowActionConfig = {
   userIds: string[];
   role: UserRole | null;
   emails: string[];
+  telegramChatId: string | null;
   excludeActor: boolean;
   title: string;
   body: string;
@@ -137,6 +139,8 @@ export function workflowActionLabel(type: WorkflowActionType): string {
       return "Notificación en la app";
     case "email":
       return "Enviar email";
+    case "telegram":
+      return "Telegram";
   }
 }
 
@@ -223,6 +227,7 @@ export function defaultWorkflowAction(
     userIds: [],
     role: null,
     emails: [],
+    telegramChatId: null,
     excludeActor: true,
     title: type === "email" ? "MSA: {{title}}" : "{{title}}",
     body: "{{actorName}} · {{status}}\n{{href}}",
@@ -275,12 +280,16 @@ export function parseWorkflowAction(raw: unknown): WorkflowActionConfig | null {
     );
   }
   const emails = parseEmailList(o.emails);
+  const chatRaw = typeof o.telegramChatId === "string" ? o.telegramChatId : "";
+  const telegramChatId = chatRaw.trim() ? normalizeTelegramChatId(chatRaw) : null;
+  if (chatRaw.trim() && !telegramChatId) return null;
   return {
     type: o.type,
     recipientKind,
     userIds,
     role,
     emails,
+    telegramChatId,
     excludeActor: o.excludeActor !== false,
     title: typeof o.title === "string" ? o.title : "",
     body: typeof o.body === "string" ? o.body : "",
@@ -314,6 +323,16 @@ export function parseWorkflowDefinition(
   for (const raw of body.actions) {
     const action = parseWorkflowAction(raw);
     if (!action) {
+      const chat =
+        raw && typeof raw === "object"
+          ? (raw as { telegramChatId?: unknown }).telegramChatId
+          : undefined;
+      if (typeof chat === "string" && chat.trim() && !normalizeTelegramChatId(chat)) {
+        return {
+          ok: false,
+          error: "El chat de Telegram debe ser un id numérico o un @canal",
+        };
+      }
       return {
         ok: false,
         error: "Hay una acción inválida (revisa el tipo o destinatarios)",
@@ -323,11 +342,13 @@ export function parseWorkflowDefinition(
     if (!title) {
       return { ok: false, error: "Cada acción de aviso necesita un título o asunto" };
     }
-    if (action.recipientKind === "users" && action.userIds.length === 0) {
-      return { ok: false, error: "Selecciona al menos una persona" };
-    }
-    if (action.recipientKind === "role" && !action.role) {
-      return { ok: false, error: "Selecciona un rol" };
+    if (action.type !== "telegram") {
+      if (action.recipientKind === "users" && action.userIds.length === 0) {
+        return { ok: false, error: "Selecciona al menos una persona" };
+      }
+      if (action.recipientKind === "role" && !action.role) {
+        return { ok: false, error: "Selecciona un rol" };
+      }
     }
     if (
       action.type === "email" &&

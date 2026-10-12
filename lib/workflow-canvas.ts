@@ -167,18 +167,21 @@ export function workflowTriggerSummary(
 export function workflowActionSummary(
   action: Pick<
     WorkflowActionConfig,
-    "type" | "recipientKind" | "role" | "title"
+    "type" | "recipientKind" | "role" | "title" | "telegramChatId"
   >
 ): string {
+  if (action.type === "telegram") {
+    return action.telegramChatId
+      ? `Telegram ${action.telegramChatId}`
+      : "Canal de Telegram";
+  }
   if (action.recipientKind === "role" && action.role) {
     return WORKFLOW_ROLE_LABELS[action.role] ?? workflowRecipientLabel("role");
   }
   return workflowRecipientLabel(action.recipientKind);
 }
 
-export function workflowActionTone(
-  type: WorkflowActionType
-): "notify" | "email" {
+export function workflowActionTone(type: WorkflowActionType): WorkflowActionType {
   return type;
 }
 
@@ -221,5 +224,6 @@ export function recipientKindsForAction(
   if (type === "email") {
     return ["assignees", "requester", "users", "role", "contact"];
   }
+  if (type === "telegram") return [];
   return ["assignees", "requester", "users", "role"];
 }

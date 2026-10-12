@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users, workflowDefinitions } from "@/lib/db/schema";
 import { isSmtpConfigured } from "@/lib/smtp-config";
+import { isTelegramConfigured } from "@/lib/telegram-config";
 import {
   coerceStoredTriggerConfig,
   coerceStoredWorkflowActions,
@@ -58,6 +59,7 @@ export default async function EditFlujoPage({
         workflowId={row.id}
         users={userRows}
         smtpConfigured={isSmtpConfigured()}
+        telegramConfigured={isTelegramConfigured()}
         initial={{
           name: row.name,
           description: row.description ?? "",

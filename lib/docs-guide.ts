@@ -71,7 +71,7 @@ export const DOCS_SECTIONS: DocsSectionMeta[] = [
   {
     slug: "flujos",
     title: "Flujos (automatizaciones)",
-    summary: "Avisos y correos cuando ocurre un evento en la planta.",
+    summary: "Avisos, correos y Telegram cuando ocurre un evento en la planta.",
     audience: ["admin"],
   },
   {

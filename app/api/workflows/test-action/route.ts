@@ -20,9 +20,9 @@ function requireAdmin(session: { role: string } | null) {
 }
 
 function successMessage(type: WorkflowActionType): string {
-  return type === "email"
-    ? "Email de prueba enviado a tu correo"
-    : "Notificación de prueba enviada a tu cuenta";
+  if (type === "email") return "Email de prueba enviado a tu correo";
+  if (type === "telegram") return "Mensaje de prueba enviado a Telegram";
+  return "Notificación de prueba enviada a tu cuenta";
 }
 
 export async function POST(req: Request) {

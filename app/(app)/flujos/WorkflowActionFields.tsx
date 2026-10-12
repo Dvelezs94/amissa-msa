@@ -19,6 +19,7 @@ import {
   type WorkflowTriggerType,
 } from "@/lib/workflows";
 import { shouldShowWorkflowSmtpHint } from "@/lib/smtp-config";
+import { shouldShowWorkflowTelegramHint } from "@/lib/telegram-config";
 import { WorkflowTemplateField } from "./WorkflowTemplateField";
 
 const FIELD =
@@ -31,6 +32,7 @@ export function WorkflowActionFields({
   canRemove,
   users,
   smtpConfigured,
+  telegramConfigured,
   triggerType,
   onPatch,
   onType,
@@ -41,6 +43,7 @@ export function WorkflowActionFields({
   canRemove: boolean;
   users: { id: string; name: string }[];
   smtpConfigured: boolean;
+  telegramConfigured: boolean;
   triggerType: WorkflowTriggerType;
   onPatch: (index: number, patch: Partial<WorkflowActionConfig>) => void;
   onType: (index: number, type: WorkflowActionType) => void;
@@ -116,6 +119,37 @@ export function WorkflowActionFields({
         </p>
       ) : null}
 
+      {action.type === "telegram" &&
+      shouldShowWorkflowTelegramHint({
+        telegramConfigured,
+        nodeEnv: process.env.NODE_ENV,
+      }) ? (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          El envío a Telegram necesita TELEGRAM_BOT_TOKEN en el servidor. Sin
+          eso, esta acción se omite.
+        </p>
+      ) : null}
+
+      {action.type === "telegram" ? (
+        <div className="space-y-1">
+          <label className={LABEL} htmlFor={`wf-telegram-${index}`}>
+            Chat o canal (opcional)
+          </label>
+          <input
+            id={`wf-telegram-${index}`}
+            value={action.telegramChatId ?? ""}
+            onChange={(e) =>
+              onPatch(index, { telegramChatId: e.target.value.trim() || null })
+            }
+            placeholder="-1001234567890 o @canal"
+            className={FIELD}
+          />
+          <p className="text-[11px] text-zinc-500">
+            Si lo dejas vacío, se usa el chat por defecto del servidor.
+          </p>
+        </div>
+      ) : (
+      <>
       <div className="space-y-1">
         <label className={LABEL} htmlFor={`wf-recipients-${index}`}>
           Destinatarios
@@ -203,6 +237,8 @@ export function WorkflowActionFields({
         />
         No avisar a quien disparó el evento
       </label>
+      </>
+      )}
 
       <div className="space-y-1">
         <label className={LABEL} htmlFor={`wf-title-${index}`}>
@@ -238,7 +274,9 @@ export function WorkflowActionFields({
           {testing ? "Probando…" : "Probar"}
         </button>
         <p className="text-[11px] text-zinc-500">
-          Te llega a ti, con datos de ejemplo.
+          {action.type === "telegram"
+            ? "Se envía al chat de Telegram configurado, con datos de ejemplo."
+            : "Te llega a ti, con datos de ejemplo."}
         </p>
       </div>
       {testError ? (

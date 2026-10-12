@@ -24,6 +24,16 @@ describe("workflowActionForDryRun", () => {
       excludeActor: false,
       emails: ["admin@example.com"],
     });
+
+    const telegram = workflowActionForDryRun(
+      {
+        ...defaultWorkflowAction("telegram"),
+        telegramChatId: "@planta",
+      },
+      { id: "admin1", email: "admin@example.com" }
+    );
+    expect(telegram.telegramChatId).toBe("@planta");
+    expect(telegram.type).toBe("telegram");
   });
 });
 

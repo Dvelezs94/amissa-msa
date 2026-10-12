@@ -36,11 +36,13 @@ export function WorkflowForm({
   initial,
   users,
   smtpConfigured,
+  telegramConfigured,
 }: {
   workflowId?: string;
   initial?: ParsedWorkflowDefinition;
   users: UserOption[];
   smtpConfigured: boolean;
+  telegramConfigured: boolean;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<WorkflowWizardStep>("basics");
@@ -289,6 +291,7 @@ export function WorkflowForm({
               canRemove={actions.length > 1}
               users={users}
               smtpConfigured={smtpConfigured}
+              telegramConfigured={telegramConfigured}
               triggerType={triggerType}
               onPatch={updateAction}
               onType={(i, type) => {
@@ -299,6 +302,7 @@ export function WorkflowForm({
                   userIds: current?.userIds ?? [],
                   role: current?.role ?? null,
                   emails: current?.emails ?? [],
+                  telegramChatId: current?.telegramChatId ?? null,
                   excludeActor: current?.excludeActor ?? true,
                 });
               }}

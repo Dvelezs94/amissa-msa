@@ -8,7 +8,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from "react";
-import { Bell, Mail, Zap } from "lucide-react";
+import { Bell, Mail, Send, Zap } from "lucide-react";
 import {
   clampWorkflowCanvasZoom,
   layoutWorkflowCanvas,
@@ -28,6 +28,7 @@ const TONE_CLASS: Record<string, string> = {
   trigger: "bg-accent-500",
   notify: "bg-primary-600",
   email: "bg-teal-700",
+  telegram: "bg-sky-700",
 };
 
 function NodeIcon({
@@ -40,6 +41,7 @@ function NodeIcon({
   const cls = "h-5 w-5 text-white";
   if (kind === "trigger") return <Zap className={cls} />;
   if (actionType === "email") return <Mail className={cls} />;
+  if (actionType === "telegram") return <Send className={cls} />;
   return <Bell className={cls} />;
 }
 
